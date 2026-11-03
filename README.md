@@ -2,6 +2,8 @@
 
 L'app a due per coppie: quiz, ricordi, storie e giochi.
 
+Autore: Paolo Fori.
+
 ## Dove andare
 **Cuoricino:** https://paolofori.github.io/cuoricino
 
