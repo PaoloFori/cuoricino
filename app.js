@@ -228,8 +228,9 @@ function recapItems(ym){
   const R=D.RECAP||[], seed=+ym.replace('-','');
   const fx=R.map((q,i)=>[q,i]).filter(x=>x[0].fixed), rest=R.map((q,i)=>[q,i]).filter(x=>!x[0].fixed);
   let r=seed;const rnd=()=>{r=(r*1103515245+12345)%2147483648;return r/2147483648};
+  let extra=3; if(ym>='2026-11'){rnd();extra=3+Math.floor(rnd()*4)} /* 6-9 domande a seconda del mese */
   for(let i=rest.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[rest[i],rest[j]]=[rest[j],rest[i]]}
-  return fx.concat(rest.slice(0,3)).map((x,n)=>({key:'mr'+ym.replace('-','')+'q'+n,t:x[0].t,o:x[0].o,hot:false}));
+  return fx.concat(rest.slice(0,extra)).map((x,n)=>({key:'mr'+ym.replace('-','')+'q'+n,t:x[0].t,o:x[0].o,hot:false}));
 }
 const dayDone=(slot,d)=>isMonthEnd(d)?recapItems(d.slice(0,7)).every(it=>done(ans(slot,it.key))):done(ans(slot,'d'+d));
 function srcOf(src){
@@ -246,18 +247,19 @@ function streak(){
   let n=0; while(n<400&&both(d)){n++;d=addDays(d,-1)}
   return n;
 }
-const DCATS=[['all','Tutte'],['know','Conoscersi'],['fun','Divertenti'],['light','Innocue'],['curio','Curiosità'],['love','Romantiche'],['trip','Viaggi'],['food','Cibo'],['future','Futuro'],['past','Passato'],['pop','Cultura pop'],['deep','Profonde'],['work','Lavoro e studio'],['family','Famiglia e amici'],['body','Sport e benessere'],['nature','Natura e animali'],['dream','Sogni e fantasia'],['values','Valori'],['home','Casa e routine'],['tech','Tecnologia'],['hot','Hot 18+']];
+const DCATS=[['all','Tutte'],['know','Conoscersi'],['fun','Divertenti'],['light','Innocue'],['curio','Curiosità'],['love','Romantiche'],['trip','Viaggi'],['food','Cibo'],['future','Futuro'],['past','Passato'],['pop','Cultura pop'],['deep','Profonde'],['work','Lavoro e studio'],['family','Famiglia e amici'],['body','Sport e benessere'],['nature','Natura e animali'],['dream','Sogni e fantasia'],['values','Valori'],['home','Casa e routine'],['tech','Tecnologia'],['money','Soldi e progetti'],['quirk','Manie e abitudini'],['child','Infanzia'],['conflict','Fiducia e litigi'],['hot','Hot 18+ · tutte'],['hot-flirt','Hot · Flirt e seduzione'],['hot-fant','Hot · Fantasie'],['hot-int','Hot · Intimità'],['hot-spicy','Hot · Piccanti']];
+const isHot=c=>c==='hot'||(typeof c==='string'&&c.indexOf('hot-')===0);
 const dcatName=c=>(DCATS.find(x=>x[0]===c)||['','Tutte'])[1];
 function allowedDeck(cat){
   const on=hotOn(), r=[];
   DECK.forEach((q,i)=>{
-    if(cat==='hot'){if(q.hot&&on)r.push(i)}
+    if(isHot(cat)){if(q.hot&&on&&(cat==='hot'||q.sub===cat.slice(4)))r.push(i)}
     else if(!q.hot&&(!cat||cat==='all'||q.cat===cat))r.push(i);
   });
   return r;
 }
 const validDraw=v=>typeof v==='number'?(DECK[v]?v:null):(typeof v==='string'&&v[0]==='c'&&v.length>1?v:null);
-function customPool(cat){return S.custom.filter(c=>cat==='hot'?(c.hot&&hotOn()):(!c.hot&&(cat==='all'||c.cat===cat))).map(c=>'c'+c.id)}
+function customPool(cat){return S.custom.filter(c=>isHot(cat)?(c.hot&&hotOn()&&cat==='hot'):(!c.hot&&(cat==='all'||c.cat===cat))).map(c=>'c'+c.id)}
 function drawNext(cat){
   const pool0=allowedDeck(cat).concat(customPool(cat)); if(!pool0.length)return null;
   const dn=i=>{const k=typeof i==='number'?'k'+i:i;return done(ans('A',k))&&done(ans('B',k))};
@@ -379,7 +381,7 @@ function welcomeHTML(){
      <p class="note">Mandalo alla persona che ami: lo inserirà sul suo telefono per collegarsi a te.</p>
      <button class="btn" data-act="w-share">Condividi il codice</button><button class="btn ghost" data-act="w-go">Continua</button></section>`;
   }else if(w.step==='code'){
-    body=`<form class="card form" data-form="join" novalidate><label for="f-code">Codice della coppia</label><input id="f-code" autocapitalize="characters" autocomplete="off" maxlength="12" placeholder="ABCD-1234">
+    body=`<form class="card form" data-form="join" novalidate><label for="f-code">Codice della coppia</label><input id="f-code" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go" autocomplete="off" maxlength="12" placeholder="ABCD-1234">
      <p class="err" id="err" role="alert" hidden></p><button class="btn" type="submit">Collegati</button><button class="btn ghost" type="button" data-act="w-back">Indietro</button></form>`;
   }else if(cloud&&cloud.hasCouple()){
     body=`<section class="card" style="display:flex;flex-direction:column;gap:12px"><p>${esc(w.err||'Non riesco a collegarmi.')}</p><button class="btn" data-act="w-retry">Riprova</button></section>`;
@@ -612,7 +614,7 @@ function quizHTML(){
   return headerHTML()+`<h2 class="h2">Quiz</h2>`+deckHTML()+specialsHTML()+quickHTML()+customHTML()+packsHTML();
 }
 function deckHTML(){
-  const on=hotOn(); let cat=S.deckCat||'all'; if(cat==='hot'&&!on)cat='all';
+  const on=hotOn(); let cat=S.deckCat||'all'; if(isHot(cat)&&!on)cat='all';
   const pool=allowedDeck(cat).length+customPool(cat).length;
   const dr=drawIt(); let body;
   if(!dr){
@@ -626,7 +628,7 @@ function deckHTML(){
   }
   const total=DECK.filter(q=>!q.hot).length+S.custom.filter(c=>!c.hot).length;
   return `<section class="card"><div class="qhead"><div><h3 style="font-size:22px">Il mazzo</h3><p class="note">${total} domande${on?' + '+(DECK.filter(q=>q.hot).length+S.custom.filter(c=>c.hot).length)+' hot':''} · ${pool} in "${esc(dcatName(cat))}" · comprese le vostre</p></div></div>
-   <label class="selw"><span class="eyebrow">Categoria</span><select data-sel="deckcat" aria-label="Categoria del mazzo">${DCATS.map(c=>`<option value="${c[0]}" ${cat===c[0]?'selected':''}>${c[0]==='hot'&&!on?'Hot 18+ (bloccato)':esc(c[1])}</option>`).join('')}</select></label>${body}</section>${dr&&done(ans('A',dr.it.key))&&done(ans('B',dr.it.key))?chatHTML(dr.it.key,'Parlatene insieme'):''}`;
+   <label class="selw"><span class="eyebrow">Categoria</span><select data-sel="deckcat" aria-label="Categoria del mazzo">${DCATS.map(c=>`<option value="${c[0]}" ${cat===c[0]?'selected':''}>${isHot(c[0])&&!on?'Hot 18+ (bloccato)':esc(c[1])}</option>`).join('')}</select></label>${body}</section>${dr&&done(ans('A',dr.it.key))&&done(ans('B',dr.it.key))?chatHTML(dr.it.key,'Parlatene insieme'):''}`;
 }
 function quickHTML(){
   const ns=[5,10,20,30], on=hotOn(), q=S.quick&&S.quick.ids&&S.quick.ids.length;
@@ -637,7 +639,7 @@ function quickHTML(){
      <div class="bar"><span class="nm">${esc(nm('B'))}</span><span class="track B"><i style="width:${b/it.length*100}%"></i></span><span class="n">${b}/${it.length}</span></div></div>
      <div class="actions"><button class="btn" data-act="open" data-src="quick">${mine===0?'Inizia':mine<it.length?'Continua':'Rivedi risultati'}</button><button class="btn ghost" data-act="res" data-src="quick">Risultati</button></div>`;
   }
-  return `<section class="card"><h3 style="font-size:22px">Quiz rapido</h3><p class="note" style="margin:2px 0 12px">Scegliete la lunghezza: domande a caso dal mazzo, nella categoria scelta qui sopra (${esc(dcatName(S.deckCat==='hot'?'all':(S.deckCat||'all')))}).</p>
+  return `<section class="card"><h3 style="font-size:22px">Quiz rapido</h3><p class="note" style="margin:2px 0 12px">Scegliete la lunghezza: domande a caso dal mazzo, nella categoria scelta qui sopra (${esc(dcatName(isHot(S.deckCat)?'all':(S.deckCat||'all')))}).</p>
    <div class="chips">${ns.map(n=>`<button class="chip ${S.quickN===n?'on':''}" data-act="quickn" data-n="${n}">${n}</button>`).join('')}${on?`<button class="chip ${S.quickHot?'on':''}" data-act="quickhot">Hot 18+</button>`:''}</div>
    <div class="actions"><button class="btn" data-act="quicknew">${heartSvg()}Crea ${S.quickN} domande</button></div>${cur}</section>`;
 }
@@ -743,7 +745,7 @@ function addqHTML(){
    <label for="f-qo">Opzioni (una per riga, da 2 a 6). Se le lasci vuote la risposta è libera.</label>
    <textarea id="f-qo" data-d="cq.o" placeholder="Mare&#10;Montagna&#10;Città">${esc(q.o)}</textarea>
    <label for="f-qc">Categoria (la domanda entra nel mazzo di quella categoria e potete pescarla di nuovo)</label>
-   <select id="f-qc" data-d="cq.cat">${DCATS.filter(c=>c[0]!=='all'&&c[0]!=='hot').map(c=>`<option value="${c[0]}" ${(q.cat||'know')===c[0]?'selected':''}>${esc(c[1])}</option>`).join('')}</select>
+   <select id="f-qc" data-d="cq.cat">${DCATS.filter(c=>c[0]!=='all'&&!isHot(c[0])).map(c=>`<option value="${c[0]}" ${(q.cat||'know')===c[0]?'selected':''}>${esc(c[1])}</option>`).join('')}</select>
    <label class="chk"><input type="checkbox" data-d="cq.hot" ${q.hot&&on?'checked':''} ${on?'':'disabled'}>Domanda hot 18+ ${on?'':'(si sblocca in Noi)'}</label>
    <p class="err" id="err" role="alert" hidden></p>
    <button class="btn" type="submit">Aggiungi la domanda</button>
@@ -825,7 +827,7 @@ function milestones(){
   const s=since(), t=todayStr(), n=dnum(t)-dnum(s), out=[], fut=[];
   const add=(date,title)=>{(dnum(date)>dnum(t)?fut:out).push({auto:true,date:date,title:title,at:0})};
   add(s,'Il nostro inizio');
-  [50,100,200,300,365,500,730,1000,1095,1500,2000,2555,3000,3650].forEach(d=>add(addDays(s,d),pl(d,'giorno','giorni')+' insieme'));
+  [50,100,200,300,500,1000,1500,2000,3000].forEach(d=>add(addDays(s,d),pl(d,'giorno','giorni')+' insieme'));
   const p=s.split('-'); for(let y=1;y<=30;y++)add((+p[0]+y)+'-'+p[1]+'-'+p[2],pl(y,'anno','anni')+' insieme');
   fut.sort((a,b)=>dnum(a.date)-dnum(b.date));
   return out.concat(fut.slice(0,1).map(f=>Object.assign({},f,{fut:true})));
@@ -1010,7 +1012,7 @@ document.addEventListener('input',e=>{
   if(p.length===1)S[p[0]]=v; else{S[p[0]]=S[p[0]]||{};S[p[0]][p[1]]=v}
 });
 document.addEventListener('change',e=>{
-  const t=e.target; if(t&&t.dataset&&t.dataset.sel==='deckcat'){S.deckCat=t.value;if(S.deckCat==='hot'&&!hotOn()){S.deckCat='all';toast('Servono il sì di tutti e due, nella sezione Noi.')}render(true);return}
+  const t=e.target; if(t&&t.dataset&&t.dataset.sel==='deckcat'){S.deckCat=t.value;if(isHot(S.deckCat)&&!hotOn()){S.deckCat='all';toast('Servono il sì di tutti e due, nella sezione Noi.')}render(true);return}
   if(t&&t.type==='checkbox'&&t.dataset&&t.dataset.d){const p=t.dataset.d.split('.');S[p[0]]=S[p[0]]||{};S[p[0]][p[1]]=t.checked}
 });
 
@@ -1070,16 +1072,16 @@ document.addEventListener('click',e=>{
   case 'clrst': if(saveMine({st:null})){toast('Stato tolto');go()}break;
   case 'draw':{
     if(!S.canWrite){toast(RO);break}
-    const dc=(S.deckCat==='hot'&&!hotOn())?'all':(S.deckCat||'all'), n=drawNext(dc); if(n===null){toast('Nessuna domanda in questa categoria.');break} S.draw=n;
+    const dc=(isHot(S.deckCat)&&!hotOn())?'all':(S.deckCat||'all'), n=drawNext(dc); if(n===null){toast('Nessuna domanda in questa categoria.');break} S.draw=n;
     if(S.mode==='shared')db.doc('couple/draw').set({i:n,at:Date.now()}).catch(()=>toast('Non riesco a pescare.')); else lsSave();
     render(true);break}
   case 'pcat': S.pcat=t.dataset.c;render(true);break;
-  case 'deckcat': S.deckCat=t.dataset.c; if(S.deckCat==='hot'&&!hotOn()){S.deckCat='all';toast('Servono il sì di tutti e due, nella sezione Noi.')} render(true);break;
+  case 'deckcat': S.deckCat=t.dataset.c; if(isHot(S.deckCat)&&!hotOn()){S.deckCat='all';toast('Servono il sì di tutti e due, nella sezione Noi.')} render(true);break;
   case 'quickn': S.quickN=+t.dataset.n;render(true);break;
   case 'quickhot': S.quickHot=!S.quickHot;render(true);break;
   case 'quicknew':{
     if(!S.canWrite){toast(RO);break}
-    const cat=S.quickHot&&hotOn()?'hot':((S.deckCat&&S.deckCat!=='hot')?S.deckCat:'all'), pool=allowedDeck(cat), m=me();
+    const cat=S.quickHot&&hotOn()?'hot':((S.deckCat&&!isHot(S.deckCat))?S.deckCat:'all'), pool=allowedDeck(cat), m=me();
     const fresh=shuffle(pool.filter(x=>!done(ans(m,'k'+x)))), rest=shuffle(pool.filter(x=>done(ans(m,'k'+x))));
     const ids=fresh.concat(rest).slice(0,S.quickN);
     S.quick={ids:ids,at:Date.now()};
@@ -1145,7 +1147,7 @@ document.addEventListener('click',e=>{
   case 'hotok':{
     const on=!(S.answers[me()]||{}).hotok;
     if(saveMine({hotok:on}))toast(on?'Hai acconsentito. Si sblocca quando acconsente anche l\'altro.':'Contenuti hot disattivati');
-    if(!on&&S.deckCat==='hot')S.deckCat='all';
+    if(!on&&isHot(S.deckCat))S.deckCat='all';
     render(true);break}
   case 'geo':{
     if(!navigator.geolocation){toast('Posizione non disponibile qui: scegli la città.');break}

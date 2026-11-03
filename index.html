@@ -12,7 +12,16 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
-<style>:root{color-scheme:light dark}body{padding-top:max(18px,env(safe-area-inset-top,0px))!important}</style>
+<style>:root{color-scheme:light dark}body{padding-top:max(18px,env(safe-area-inset-top,0px))!important;min-height:100vh;min-height:100dvh;overscroll-behavior-y:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+/* Telefono: niente ritardo né zoom al doppio tocco, tocchi più comodi, testo mai troppo piccolo */
+button,a,select,summary,[role=button],[data-act]{touch-action:manipulation}
+button{-webkit-touch-callout:none}
+.mini{min-height:36px;font-size:13px;padding:6px 12px}
+.stat span,.sb small{font-size:12px}
+#nav .in{max-width:calc(100% - 24px)}
+#nav button{width:clamp(46px,16vw,56px)}
+@media (max-width:360px){#app{gap:12px}.h2{font-size:24px}.btn{padding:0 14px}.stat b{font-size:28px}}
+img{-webkit-user-drag:none}</style>
 <script>if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </head>
 <body>

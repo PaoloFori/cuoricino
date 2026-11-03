@@ -58,3 +58,10 @@ Note:
 ## Novità versione 9
 - Ognuno ha il proprio profilo: chi crea la coppia scrive solo il proprio nome; il partner, quando si collega, scrive il suo. In "Noi" compaiono entrambi da soli.
 - Ricordi: un solo grande cuore con i due nomi e le foto profilo.
+
+## Novità versione 10
+- Nuove categorie nel Mazzo: Soldi e progetti, Manie e abitudini, Infanzia, Fiducia e litigi (60 domande).
+- Hot 18+ ora ha sottocategorie: Flirt e seduzione, Fantasie, Intimità, Piccanti (60 domande). Restano bloccate finché non dicono sì tutti e due.
+- Resoconto del mese: da novembre 2026 ha un numero variabile di domande (da 6 a 9, 3 fisse + da 3 a 6 scelte dal mese) e il pool passa da 20 a 45 domande su com'è andato il mese.
+- Traguardi: tolti i doppioni ("365 giorni" e "1 anno" lo stesso giorno); restano i traguardi in giorni e gli anniversari in anni.
+- Telefono: tocchi senza ritardo né zoom al doppio tocco, altezza corretta con la barra del browser, barra in basso più adattabile sugli schermi stretti.
