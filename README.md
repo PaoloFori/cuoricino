@@ -5,8 +5,6 @@ L'app a due per coppie: quiz, ricordi, storie e giochi.
 ## Dove andare
 **Cuoricino:** https://paolofori.github.io/cuoricino
 
-Altra app dello stesso autore: **Il Narratore**, giochi da raccontare (Lupus in Fabula, Mister White, La Spia): https://paolofori.github.io/narratore
-
 ## Come si usa
 1. Apri il link dal telefono.
 2. Il primo dei due sceglie **Crea la nostra coppia**, scrive il proprio nome e riceve un codice.
