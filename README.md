@@ -9,8 +9,8 @@ Autore: Paolo Fori.
 
 ## Come si usa
 1. Apri il link dal telefono.
-2. Il primo dei due sceglie **Crea la nostra coppia**, scrive il proprio nome e riceve un codice.
-3. L'altra persona sceglie **Ho un codice**, lo inserisce e scrive il proprio nome.
+2. Il primo dei due sceglie **Crea la nostra coppia**, scrive il proprio nome e riceve un codice **e la chiave di cifratura**. Salva la chiave (vedi sotto).
+3. L'altra persona sceglie **Ho un codice**, lo inserisce, incolla la chiave che le hai passato e scrive il proprio nome.
 4. I due profili si uniscono da soli nella sezione **Noi**.
 
 ### Aggiungere l'app alla Home
@@ -36,5 +36,37 @@ Altri due giochi sono solo **hot** (si sbloccano se dicono sì tutti e due): �
 Le partite restano salvate: puoi uscire con "← Indietro" e giocarne più d'una insieme. Ogni giorno c'è una **Sfida del giorno** con regole a caso, e su ogni gioco "🎲 A sorpresa".
 
 Oltre ai giochi ci sono i **quiz**: la domanda del giorno, il mazzo con più di mille domande divise per categoria, quiz a tema e il resoconto di fine mese. I contenuti **Hot 18+** si sbloccano solo se dicono sì tutti e due.
+
+## Cifratura delle foto e dei messaggi 🔒
+Foto, messaggi, risposte, note e posizione vengono **cifrati sul telefono** prima di andare sul server: sul server si vede solo materiale illeggibile. La chiave non va mai al server.
+
+**Coppia nuova:** la cifratura è già attiva. Alla creazione compare la chiave: **copiala e salvala** (gestore di password o nota privata) e passala all'altra persona in un messaggio privato o a voce.
+
+**Coppia già in uso: cosa succede quando si preme "Attiva la cifratura"** (in **Noi**, scheda "Cifratura 🔓 non attiva"):
+1. L'app crea una chiave nuova sul tuo telefono e la mostra: **copiala e salvala subito**.
+2. Cifra da sola le foto e i dati già salvati sul server (compaiono messaggi "Cifro i dati già salvati… N"). Aspetta che finisca.
+3. La scheda diventa "Cifratura 🔒 attiva". Da lì puoi rivedere la chiave con "Mostra la chiave".
+4. L'altro telefono, appena riaperto l'app, mostra una schermata che chiede la chiave: va incollata (la scrivi tu a mano o la mandi in un messaggio privato). Senza, non apre nulla.
+5. Sull'altro telefono, dopo aver inserito la chiave, premi in **Noi** "Cifra i dati già salvati" per cifrare anche le sue risposte vecchie.
+
+**Attenzione:** se perdi la chiave su tutti i telefoni, foto e messaggi **non si riaprono più** (nemmeno da noi). Teniamene una copia al sicuro.
+
+**Telefono perso o sostituito:** in **Noi → Collegamento tra telefoni** premi "Ho perso un telefono: scollega i vecchi". I telefoni che non sono più tuoi non leggono più nulla dal server.
+
+**Cancellare tutto dal server:** in **Noi → Privacy e dati** c'è "Cancella tutti i dati dal server" (doppia conferma, per entrambi).
+
+## Aggiornare l'app (per chi gestisce il progetto)
+1. **Supabase** → SQL Editor → incolla di nuovo tutto [supabase.sql](supabase.sql) e premi **Run** (è sicuro rifarlo: aggiorna le funzioni senza toccare i dati).
+2. **GitHub**: fai un solo `git push`. Aspetta circa un minuto che in **Actions** diventi verde.
+3. Su ogni telefono **chiudi del tutto l'app e riaprila**: scarica da sola i file nuovi.
+4. Solo la prima volta: attiva la cifratura (vedi sopra) e le notifiche (vedi sotto).
+
+Se cambi la funzione `push` o le notifiche, rifai anche il passaggio descritto in [GUIDA.md](GUIDA.md) ("Attivare le notifiche").
+
+## Notifiche 🔔
+In **Noi → Avvisi** attivi le notifiche: alle 8 il promemoria delle attività, alle 20 il sollecito se non le hai fatte, un avviso quando l'altro le fa e quando in un gioco tocca a te. Su iPhone serve iOS 16.4 o più recente e l'app aggiunta alla schermata Home. La configurazione del server è in [GUIDA.md](GUIDA.md).
+
+## Prove automatiche
+La cartella [tests/](tests/) contiene le prove di cifratura, database e due telefoni: vedi [tests/README.md](tests/README.md).
 
 Per la configurazione del server vedi [GUIDA.md](GUIDA.md).
