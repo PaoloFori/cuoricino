@@ -93,3 +93,7 @@ Note:
 - **Home a tre blocchi:** Domanda del giorno, Sfida di coppia, Missione del giorno. La missione compare già nel blocco, con il suo testo (lo vedi solo tu), così sai cosa fare. La "Conversazione 18+" non c'è più come blocco: con l'hot sbloccato entra nella domanda del giorno come quarta domanda facoltativa, una volta su tre "senza filtri".
 - **Quiz:** il mazzo mostra solo categoria e "Pesca una domanda": la domanda si apre in una pagina a parte, e il Quiz continua con Sorprese del calendario, Quiz rapido, Le vostre domande e Quiz completi.
 - **Hot rivisto:** tutte le domande hot hanno le emoji. Alcune sono velate (con emoji che ammiccano), altre molto esplicite (🍆💦🍑🔥). Vale anche per i quiz hot, per Obbligo o verità, per i dadi e per i pegni.
+
+## Novità versione 14
+- In **Noi** c'è la scheda **Privacy e dati**: spiega dove stanno i dati, chi li vede e come sono protetti.
+- Nuovo pulsante **"Cancella tutti i dati dal server"** (con doppia conferma): elimina per sempre la coppia e tutti i suoi contenuti dal database, per entrambi. Per farlo funzionare serve rieseguire `supabase.sql` nell'SQL Editor (aggiunge la funzione `delete_couple`).

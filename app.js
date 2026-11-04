@@ -1100,6 +1100,19 @@ function noiHTML(){
    <p class="note" style="margin-top:10px">${S.devCode?'Su un nuovo telefono scegli "Ho un codice" e inserisci questo codice monouso (vale 15 minuti): <b>'+esc(fmtCode(S.devCode))+'</b>':'Per usare Cuoricino su un nuovo telefono genera un codice monouso.'}</p>
    ${S.confirmLeave?`<p style="margin-top:12px">Esci da questa coppia su questo telefono? I dati restano sull'altro telefono e nel server.</p><div class="actions"><button class="btn" data-act="leave-yes">Sì, esci</button><button class="btn ghost" data-act="leave-no">Annulla</button></div>`
    :`<div class="actions"><button class="btn sm" data-act="devcode">Collega un nuovo telefono</button><button class="btn ghost sm" data-act="leave">Esci dalla coppia</button></div>`}</section>`:'';
+  const wipe=S.cloudOn&&cloud?(S.confirmWipe
+    ?`<div style="margin-top:14px;padding:12px;border-radius:14px;background:var(--a-soft)"><p><b>Cancello tutto dal server, per tutti e due?</b></p><p class="note" style="margin:6px 0 10px">Risposte, foto, partite, chat, storie e la coppia stessa spariscono per sempre. ${esc(nm(o))} dovrà uscire dalla coppia e ricominciare. Non si può annullare.</p><div class="actions"><button class="btn" data-act="wipe-yes">Sì, cancella tutto</button><button class="btn ghost" data-act="wipe-no">Annulla</button></div></div>`
+    :`<div class="actions" style="margin-top:12px"><button class="btn ghost sm" data-act="wipe">Cancella tutti i dati dal server</button></div>`):'';
+  const privacy=`<section class="card"><h3 style="font-size:20px">Privacy e dati</h3>
+   <ul class="dlist">
+    <li><b>Dove stanno:</b> nel progetto Supabase che avete creato (regione scelta da voi), non su GitHub e non da altri.</li>
+    <li><b>Chi li vede:</b> solo voi due. Le regole del database mostrano ogni riga soltanto ai telefoni della vostra coppia.</li>
+    <li><b>Cifratura:</b> i dati viaggiano cifrati (HTTPS) e il servizio li cifra anche sul disco. Non sono però cifrati da telefono a telefono: chi gestisce il progetto Supabase può leggerli dal pannello.</li>
+    <li><b>Come vengono usati:</b> solo per far funzionare l'app. Nessuna pubblicità, nessuna analisi, nessun tracciamento, nessuna vendita.</li>
+    <li><b>Cosa sparisce da solo:</b> risposte, foto e chat delle attività del giorno il giorno dopo; le storie dopo 3 giorni.</li>
+    <li><b>Servizi esterni:</b> i caratteri da Google Fonts e, aprendo la mappa, le tessere di OpenStreetMap.</li>
+    <li><b>Non salviamo:</b> email, password, numero di telefono. La posizione è approssimata.</li>
+   </ul>${wipe}</section>`;
   const t=todayStr(), n=Math.max(0,dnum(t)-dnum(since())), km=distKm(), sN=streak();
   const widgets=`<h3 style="font-size:22px">Widget</h3><p class="note" style="margin-top:-8px">Anteprima di come appariranno sulla Home. I widget veri richiedono la versione nativa per iOS.</p>
    <div class="wgrid">
@@ -1119,7 +1132,7 @@ function noiHTML(){
    <p class="err" id="err" role="alert" hidden></p>
    <button class="btn" type="submit">Salva</button>
    <button class="btn ghost" type="button" data-act="geo" style="margin-top:8px">Aggiorna la posizione adesso</button>
-  </form>${hot}${prefs}${cloudCard}${widgets}${info}${reset}`;
+  </form>${hot}${prefs}${cloudCard}${privacy}${widgets}${info}${reset}`;
 }
 
 /* --- Navigazione --- */
@@ -1358,6 +1371,17 @@ document.addEventListener('click',e=>{
     try{navigator.geolocation.getCurrentPosition(pos=>{
       if(saveMine({loc:{n:'Posizione attuale',la:Math.round(pos.coords.latitude*10)/10,lo:Math.round(pos.coords.longitude*10)/10}})){toast('Posizione salvata (approssimata)');render(true)}
     },()=>toast('Posizione non disponibile qui: scegli la città.'),{timeout:8000})}catch(x){toast('Posizione non disponibile qui: scegli la città.')}
+    break}
+  case 'wipe': S.confirmWipe=true;render(true);break;
+  case 'wipe-no': S.confirmWipe=false;render(true);break;
+  case 'wipe-yes':{
+    if(!cloud)break; toast('Cancello i dati dal server…');
+    (async()=>{
+      try{await PUSH.disable()}catch(e){}
+      await cloud.rpc('delete_couple');
+      cloud.leave(); try{localStorage.removeItem(LS);localStorage.removeItem('sint-notif')}catch(x){} mem.v=null;
+      toast('Tutto cancellato'); setTimeout(()=>{try{location.reload()}catch(x){}},700);
+    })().catch(()=>{S.confirmWipe=false;toast('Non riesco a cancellare. Aggiorna prima il database (vedi GUIDA) e riprova.');render(true)});
     break}
   case 'reset': S.confirmReset=true;render(true);break;
   case 'reset-no': S.confirmReset=false;render(true);break;

@@ -118,3 +118,14 @@ begin delete from push_subs where uid = auth.uid(); end $$;
 
 grant execute on function save_push(jsonb) to authenticated;
 grant execute on function drop_push() to authenticated;
+
+-- ===== Cancella tutti i dati della coppia dal server (versione 14) =====
+create or replace function delete_couple() returns void language plpgsql security definer set search_path = public as $$
+declare cid uuid;
+begin
+  if auth.uid() is null then raise exception 'non autenticato'; end if;
+  select couple into cid from members where uid = auth.uid() limit 1;
+  if cid is null then raise exception 'nessuna coppia'; end if;
+  delete from couples where id = cid; -- elimina a cascata membri, contenuti e iscrizioni alle notifiche
+end $$;
+grant execute on function delete_couple() to authenticated;
