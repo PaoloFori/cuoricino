@@ -97,3 +97,19 @@ Note:
 ## Novità versione 14
 - In **Noi** c'è la scheda **Privacy e dati**: spiega dove stanno i dati, chi li vede e come sono protetti.
 - Nuovo pulsante **"Cancella tutti i dati dal server"** (con doppia conferma): elimina per sempre la coppia e tutti i suoi contenuti dal database, per entrambi. Per farlo funzionare serve rieseguire `supabase.sql` nell'SQL Editor (aggiunge la funzione `delete_couple`).
+
+## Novità versione 15: cifratura e sicurezza
+- **Cifratura da telefono a telefono.** Foto, messaggi, risposte, note e posizione vengono cifrati sul telefono (AES-256) prima di andare sul server, che vede solo dati illeggibili. La chiave nasce sul telefono e non va mai al server.
+- **Chiave da salvare.** Senza la chiave i dati non si riaprono, nemmeno da noi. Tienine una copia (gestore di password o nota privata) e passala all'altra persona in un messaggio privato o a voce.
+- **Telefono perso o sostituito.** In Noi > Collegamento tra telefoni: "Ho perso un telefono: scollega i vecchi". I telefoni non più tuoi smettono di leggere dal server.
+- **Protezioni del sito.** Il sito può parlare solo con il vostro Supabase, Google Fonts e la mappa: se qualcosa tentasse di mandare dati altrove, il browser lo blocca.
+
+### Come attivarla (coppia già in uso)
+1. Supabase > SQL Editor: incolla di nuovo tutto `supabase.sql` e premi Run (aggiunge "scollega i vecchi telefoni").
+2. Fai il push su GitHub, poi chiudi e riapri l'app su entrambi i telefoni.
+3. Sul **primo telefono**: Noi > "Attiva la cifratura". Compare la chiave: copiala e salvala. L'app cifra da sola le foto e i dati già salvati.
+4. Sul **secondo telefono**: l'app chiede la chiave. Incollala. Poi in Noi premi "Cifra i dati già salvati" per cifrare anche le tue risposte vecchie.
+5. Le coppie **nuove** hanno la cifratura già attiva dall'inizio.
+
+### Come si controlla che funzioni
+La cartella `tests/` contiene le prove automatiche (vedi `tests/README.md`): cifratura, regole del database con utenti diversi, e una prova con due telefoni che verifica cosa riceve il server.

@@ -9,6 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Cuoricino">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org; connect-src 'self' https://*.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -37,7 +39,6 @@ img{-webkit-user-drag:none}
 .msg .qimg,.pill .qimg{max-height:200px}
 .go2{flex:none;font:800 12px var(--body);letter-spacing:.04em;text-transform:uppercase;color:var(--btn)}
 </style>
-<script>if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </head>
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -510,6 +511,7 @@ canvas{display:block;width:100%;max-width:360px;height:auto;border-radius:20px;t
 <div id="toast" class="toast" role="status" hidden></div>
 <script src="content.js"></script>
 <script src="games.js"></script>
+<script src="crypto.js"></script>
 <script src="cloud.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>

@@ -40,6 +40,8 @@ window.DUCloud=function(cfg){
       let q='/rest/v1/docs?couple=eq.'+couple.id+'&path=not.like.'+encodeURIComponent('photofull/*')+'&select=path,data,deleted,updated_at&order=updated_at.asc&limit=1000';
       if(cursor)q+='&updated_at=gt.'+encodeURIComponent(cursor);
       const rows=await req(q); let ch=false;
+      const E=window.DUCrypto;
+      for(const r of rows){if(!r.deleted&&E&&E.has())r.data=await E.decDoc(r.path,r.data)}
       rows.forEach(r=>{cursor=r.updated_at;if(pend[r.path]>0)return;if(r.deleted)delete cache[r.path];else cache[r.path]=r.data;ch=true});
       if(ch||!ready){ready=true;fire()}
       lastErr=null;
@@ -53,7 +55,9 @@ window.DUCloud=function(cfg){
     poll();
   }
   const enqueue=fn=>{chain=chain.then(fn).catch(e=>{lastErr=e;throw e});return chain};
-  const write=(path,data,deleted)=>{pend[path]=(pend[path]||0)+1;return enqueue(()=>req('/rest/v1/docs?on_conflict=couple,path',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({couple:couple.id,path:path,data:deleted?null:data,deleted:!!deleted})})).then(()=>{setTimeout(poll,250)}).finally(()=>{pend[path]--})};
+  const write=(path,data,deleted)=>{pend[path]=(pend[path]||0)+1;return enqueue(async()=>{
+    const E=window.DUCrypto, out=(deleted||!E||!E.has())?(deleted?null:data):await E.encDoc(path,data);
+    return req('/rest/v1/docs?on_conflict=couple,path',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({couple:couple.id,path:path,data:out,deleted:!!deleted})})}).then(()=>{setTimeout(poll,250)}).finally(()=>{pend[path]--})};
   const isFull=p=>p.indexOf('photofull/')===0;
 
   const db={
@@ -64,7 +68,8 @@ window.DUCloud=function(cfg){
       get:async()=>{
         if(!isFull(path))return snapDoc(path);
         const rows=await req('/rest/v1/docs?couple=eq.'+couple.id+'&path=eq.'+encodeURIComponent(path)+'&deleted=eq.false&select=data');
-        const d=rows&&rows[0]&&rows[0].data; return {exists:!!d,id:path.split('/').pop(),data:()=>d||{}};
+        let d=rows&&rows[0]&&rows[0].data; const E=window.DUCrypto; if(d&&E&&E.has())d=await E.decDoc(path,d);
+        return {exists:!!d,id:path.split('/').pop(),data:()=>d||{}};
       },
       onSnapshot:(cb,err)=>listen(()=>cb(snapDoc(path)))
     }),
@@ -102,6 +107,22 @@ window.DUCloud=function(cfg){
       await auth();
       const r=await fetch(base+'/functions/v1/'+name,{method:'POST',headers:{apikey:anon,Authorization:'Bearer '+sess.at,'Content-Type':'application/json'},body:JSON.stringify(body||{})});
       if(!r.ok)throw new Error('HTTP '+r.status); return r.json().catch(()=>({}));
+    },
+    /* Cifra le foto e i dati già salvati in chiaro. Sicura da rifare: salta ciò che è già cifrato. */
+    async migrate(progress){
+      const E=window.DUCrypto; if(!E||!E.has()||!couple)return {done:0};
+      let n=0, last='';
+      for(;;){ /* foto intere: non stanno nella cache, si leggono a pagine */
+        const q='/rest/v1/docs?couple=eq.'+couple.id+'&path=like.'+encodeURIComponent('photofull/*')+'&deleted=eq.false&select=path,data&order=path.asc&limit=20'+(last?'&path=gt.'+encodeURIComponent(last):'');
+        const rows=await req(q); if(!rows.length)break;
+        for(const r of rows){last=r.path; if(await E.needsEnc(r.path,r.data)){await write(r.path,r.data,false);n++} if(progress)progress(n)}
+        if(rows.length<20)break;
+      }
+      for(const path of Object.keys(cache)){ /* tutto il resto che c'è già in memoria (le risposte ognuno le cifra dal proprio telefono) */
+        if(path.indexOf('answers/')===0)continue;
+        if(await E.needsEnc(path,cache[path])){await write(path,cache[path],false);n++; if(progress)progress(n)}
+      }
+      return {done:n};
     },
     leave(){couple=null;sess=null;cache={};listeners=[];cursor='';ready=false;clearInterval(timer);timer=0;try{localStorage.removeItem(KEY)}catch(e){}}
   };

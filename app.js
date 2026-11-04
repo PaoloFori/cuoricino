@@ -1,11 +1,12 @@
 /* Cuoricino v3: app principale */
 (function(){
 'use strict';
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 const D=window.DUC, DECK=D.DECK, ALLPACKS=D.PACKS.concat(D.HOTPACKS), CITIES=D.CITIES;
 
 /* ---------- Stato ---------- */
 const S={mode:'boot',profile:null,answers:{A:{},B:{}},slot:null,active:'A',tab:'home',view:null,
-  draw:null,deckCat:'all',quick:null,quickN:10,quickHot:false,game:null,games:{},gopen:null,gdel:null,missions:{},msn:null,pickCtx:null,scores:{A:0,B:0},play:null,freeze:false,
+  draw:null,deckCat:'all',quick:null,quickN:10,quickHot:false,game:null,games:{},gopen:null,gdel:null,missions:{},msn:null,pickCtx:null,keycheck:null,keyOk:true,keyErr:'',showKey:false,e2eBusy:false,scores:{A:0,B:0},play:null,freeze:false,
   photos:[],events:[],stories:[],custom:[],chat:[],pcat:'all',full:{},photoView:null,confirmDel:false,confirmReset:false,
   canWrite:true,loadedP:false,slow:false,err:null,uid:null,dirty:false,photosOk:true,
   slots:{},loadedS:false,welcome:null,cloudOn:false,notifOn:false,geoOn:false,rtab:'time',ev:null,cq:null,st:'',nt:'',pickKind:null,storyTxt:'',icElim:null,icGuess:false};
@@ -22,7 +23,7 @@ function lsSave(){
 
 /* ---------- Utilità ---------- */
 const $app=document.getElementById('app'), $nav=document.getElementById('nav'), $toast=document.getElementById('toast'), $file=document.getElementById('f-photo');
-const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=s=>/^e[123]:/.test(s)?'🔒':String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
 const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 const dnum=s=>{const p=s.split('-').map(Number);return Date.UTC(p[0],p[1]-1,p[2])/86400000};
@@ -436,7 +437,9 @@ function welcomeHTML(){
   if(w.step==='created'){
     body=`<section class="card" style="text-align:center;display:flex;flex-direction:column;gap:12px"><p class="eyebrow">Il codice della coppia</p><div class="bigcode">${esc(fmtCode(w.code))}</div>
      <p class="note">Mandalo alla persona che ami: lo inserirà sul suo telefono per collegarsi a te.</p>
-     <button class="btn" data-act="w-share">Condividi il codice</button><button class="btn ghost" data-act="w-go">Continua</button></section>`;
+     <button class="btn" data-act="w-share">Condividi il codice</button>
+     ${w.key?`<div style="text-align:left;padding:12px;border-radius:14px;background:var(--a-soft)"><p class="eyebrow">Chiave di cifratura</p><p style="font:700 15px/1.5 monospace;word-break:break-all;margin:6px 0">${esc(w.key)}</p><p class="note">Foto e messaggi sono cifrati: il server non può leggerli. Senza questa chiave non si riaprono, quindi <b>salvala</b> (per esempio in un gestore di password) e passala all'altra persona in un messaggio privato o a voce. Non finisce mai nel server.</p><button class="btn ghost sm" data-act="copykey" style="margin-top:8px">Copia la chiave</button></div>`:''}
+     <button class="btn ghost" data-act="w-go">Continua</button></section>`;
   }else if(w.step==='code'){
     body=`<form class="card form" data-form="join" novalidate><label for="f-code">Codice della coppia</label><input id="f-code" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go" autocomplete="off" maxlength="12" placeholder="ABCD-1234">
      <p class="err" id="err" role="alert" hidden></p><button class="btn" type="submit">Collegati</button><button class="btn ghost" type="button" data-act="w-back">Indietro</button></form>`;
@@ -1099,15 +1102,24 @@ function noiHTML(){
   const cloudCard=S.cloudOn&&cloud?`<section class="card"><h3 style="font-size:20px">Collegamento tra telefoni</h3><p class="note" style="margin-top:6px">Codice coppia</p><div class="bigcode sm">${esc(fmtCode(cloud.code()))}</div>
    <p class="note" style="margin-top:10px">${S.devCode?'Su un nuovo telefono scegli "Ho un codice" e inserisci questo codice monouso (vale 15 minuti): <b>'+esc(fmtCode(S.devCode))+'</b>':'Per usare Cuoricino su un nuovo telefono genera un codice monouso.'}</p>
    ${S.confirmLeave?`<p style="margin-top:12px">Esci da questa coppia su questo telefono? I dati restano sull'altro telefono e nel server.</p><div class="actions"><button class="btn" data-act="leave-yes">Sì, esci</button><button class="btn ghost" data-act="leave-no">Annulla</button></div>`
-   :`<div class="actions"><button class="btn sm" data-act="devcode">Collega un nuovo telefono</button><button class="btn ghost sm" data-act="leave">Esci dalla coppia</button></div>`}</section>`:'';
+   :`<div class="actions"><button class="btn sm" data-act="devcode">Collega un nuovo telefono</button><button class="btn ghost sm" data-act="leave">Esci dalla coppia</button></div>
+   ${S.confirmRevoke?`<div style="margin-top:12px;padding:12px;border-radius:14px;background:var(--a-soft)"><p><b>Scollego i tuoi altri telefoni?</b></p><p class="note" style="margin:6px 0 10px">Serve se ne hai perso uno o l'hai sostituito. Quelli che non sono questo né il telefono di ${esc(nm(other(me())))} non leggeranno più nulla. Fallo quando siete entrambi già dentro.</p><div class="actions"><button class="btn" data-act="revoke-yes">Sì, scollega</button><button class="btn ghost" data-act="revoke-no">Annulla</button></div></div>`
+   :`<div class="actions" style="margin-top:8px"><button class="btn ghost sm" data-act="revoke">Ho perso un telefono: scollega i vecchi</button></div>`}`}</section>`:'';
   const wipe=S.cloudOn&&cloud?(S.confirmWipe
     ?`<div style="margin-top:14px;padding:12px;border-radius:14px;background:var(--a-soft)"><p><b>Cancello tutto dal server, per tutti e due?</b></p><p class="note" style="margin:6px 0 10px">Risposte, foto, partite, chat, storie e la coppia stessa spariscono per sempre. ${esc(nm(o))} dovrà uscire dalla coppia e ricominciare. Non si può annullare.</p><div class="actions"><button class="btn" data-act="wipe-yes">Sì, cancella tutto</button><button class="btn ghost" data-act="wipe-no">Annulla</button></div></div>`
     :`<div class="actions" style="margin-top:12px"><button class="btn ghost sm" data-act="wipe">Cancella tutti i dati dal server</button></div>`):'';
+  const e2e=S.cloudOn&&cloud?(S.keycheck&&DUCrypto.has()
+    ?`<section class="card"><h3 style="font-size:20px">Cifratura 🔒 attiva</h3><p class="note" style="margin:6px 0">Foto, messaggi, risposte, note e posizione sono cifrati sul tuo telefono prima di partire: sul server c'è solo materiale illeggibile.</p>
+      ${S.showKey?`<div style="padding:12px;border-radius:14px;background:var(--a-soft);margin:8px 0"><p class="eyebrow">La vostra chiave</p><p style="font:700 15px/1.5 monospace;word-break:break-all;margin:6px 0">${esc(DUCrypto.keyString())}</p><p class="note">Salvala in un posto sicuro. Se la perdi su tutti i telefoni, foto e messaggi non si possono più aprire, nemmeno da noi.</p><button class="btn ghost sm" data-act="copykey" style="margin-top:6px">Copia la chiave</button></div>`:''}
+      <div class="actions"><button class="btn ghost sm" data-act="showkey">${S.showKey?'Nascondi la chiave':'Mostra la chiave'}</button><button class="btn ghost sm" data-act="e2e-migrate" ${S.e2eBusy?'disabled':''}>${S.e2eBusy?'Un attimo…':'Cifra i dati già salvati'}</button></div></section>`
+    :!S.keycheck
+    ?`<section class="card"><h3 style="font-size:20px">Cifratura 🔓 non attiva</h3><p class="note" style="margin:6px 0 10px">Per ora foto e messaggi stanno sul server leggibili da chi gestisce il progetto. Attivando la cifratura diventano illeggibili anche per il server: solo i vostri due telefoni, che hanno la chiave, li aprono. Ti darò una chiave da passare a ${esc(nm(o))}.</p><div class="actions"><button class="btn" data-act="e2e-on" ${S.e2eBusy?'disabled':''}>Attiva la cifratura</button></div></section>`
+    :''):'';
   const privacy=`<section class="card"><h3 style="font-size:20px">Privacy e dati</h3>
    <ul class="dlist">
     <li><b>Dove stanno:</b> nel progetto Supabase che avete creato (regione scelta da voi), non su GitHub e non da altri.</li>
     <li><b>Chi li vede:</b> solo voi due. Le regole del database mostrano ogni riga soltanto ai telefoni della vostra coppia.</li>
-    <li><b>Cifratura:</b> i dati viaggiano cifrati (HTTPS) e il servizio li cifra anche sul disco. Non sono però cifrati da telefono a telefono: chi gestisce il progetto Supabase può leggerli dal pannello.</li>
+    <li><b>Cifratura:</b> i dati viaggiano cifrati (HTTPS) e il servizio li cifra sul disco. ${S.keycheck?'In più foto, messaggi, risposte, note e posizione sono <b>cifrati da telefono a telefono</b>: sul server sono illeggibili, anche per chi gestisce il progetto.':'Non sono ancora cifrati da telefono a telefono: chi gestisce il progetto può leggerli dal pannello. Puoi attivare la cifratura qui sopra.'}</li>
     <li><b>Come vengono usati:</b> solo per far funzionare l'app. Nessuna pubblicità, nessuna analisi, nessun tracciamento, nessuna vendita.</li>
     <li><b>Cosa sparisce da solo:</b> risposte, foto e chat delle attività del giorno il giorno dopo; le storie dopo 3 giorni.</li>
     <li><b>Servizi esterni:</b> i caratteri da Google Fonts e, aprendo la mappa, le tessere di OpenStreetMap.</li>
@@ -1132,7 +1144,7 @@ function noiHTML(){
    <p class="err" id="err" role="alert" hidden></p>
    <button class="btn" type="submit">Salva</button>
    <button class="btn ghost" type="button" data-act="geo" style="margin-top:8px">Aggiorna la posizione adesso</button>
-  </form>${hot}${prefs}${cloudCard}${privacy}${widgets}${info}${reset}`;
+  </form>${hot}${prefs}${cloudCard}${e2e}${privacy}${widgets}${info}${reset}`;
 }
 
 /* --- Navigazione --- */
@@ -1172,7 +1184,33 @@ const G=window.DUG({S:S,esc:esc,nm:nm,me:me,other:other,heartSvg:heartSvg,toast:
 
 const newGameId=()=>'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 function syncGame(){const g=S.gopen?S.games[S.gopen]:null;S.game=g||null;if(S.gopen&&!g)S.gopen=null}
+/* ---------- Cifratura da telefono a telefono ---------- */
+async function e2eEnable(){
+  await DUCrypto.generate();
+  const chk=await DUCrypto.makeCheck();
+  await cloud.db.doc('couple/keycheck').set({v:chk});
+  S.keycheck=chk; S.keyOk=true;
+}
+async function e2eMigrate(){
+  if(!cloud||!DUCrypto.has())return;
+  S.e2eBusy=true; render(true);
+  try{
+    const r=await cloud.migrate(n=>toast('Cifro i dati già salvati… '+n));
+    if(S.mode==='shared'&&me())queueWrite(me());
+    toast('Fatto: '+r.done+' elementi cifrati. Le tue risposte vecchie si cifrano alla prossima modifica.');
+  }catch(e){toast('Non sono riuscito a cifrare tutto. Riprova.')}
+  S.e2eBusy=false; render(true);
+}
+function gateHTML(){
+  return `<div class="hero2"><div class="logo">${markSvg(96)}</div><h1>Cuoricino</h1><p class="lead">I vostri dati sono cifrati. Per aprirli serve la chiave di cifratura.</p></div>
+   <form class="card form" data-form="key" novalidate><p>La chiave l'ha creata ${esc(((S.profile&&S.profile.names)||{}).A||'la persona che ha attivato la cifratura')} sul suo telefono. Chiedigliela (a voce o in un messaggio) e incollala qui.</p>
+    <label for="f-key">Chiave di cifratura</label><textarea id="f-key" rows="3" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX-…"></textarea>
+    ${S.keyErr?`<p class="err" role="alert">${esc(S.keyErr)}</p>`:''}
+    <button class="btn" type="submit">Apri i nostri dati</button></form>
+   <p class="note">La chiave resta solo su questo telefono: il server non la riceve mai.</p>`;
+}
 function html(){
+  if(S.mode==='shared'&&S.cloudOn&&S.keycheck&&!S.keyOk)return gateHTML();
   if(S.mode==='boot')return loadingHTML();
   if(S.mode==='welcome')return welcomeHTML();
   if(S.err)return errorHTML();
@@ -1311,16 +1349,31 @@ document.addEventListener('click',e=>{
   case 'addq': S.cq={t:'',o:'',hot:false,cat:'know'};S.view={t:'addq'};S.tab='quiz';go();break;
   case 'delq': delRec('custom',t.dataset.id).then(()=>render(true)).catch(()=>toast('Non riesco a eliminarla.'));break;
   case 'w-create':
-    S.welcome={step:'choose'}; cloud.create().then(c=>{S.welcome={step:'created',code:c.code};render(true)}).catch(e=>{S.welcome={step:'choose',err:'Non riesco a creare la coppia: '+(e&&e.message||'errore')};render(true)});break;
+    S.welcome={step:'choose'}; cloud.create().then(async c=>{
+      let key='';
+      try{if(DUCrypto.supported()){await e2eEnable();key=DUCrypto.keyString()}}catch(e){}
+      S.welcome={step:'created',code:c.code,key:key};render(true)}).catch(e=>{S.welcome={step:'choose',err:'Non riesco a creare la coppia: '+(e&&e.message||'errore')};render(true)});break;
   case 'w-have': S.welcome={step:'code'};render(true);break;
   case 'w-back': S.welcome={step:'choose'};render(true);break;
   case 'w-go': startCloud();break;
   case 'w-retry': startCloud();break;
   case 'w-local': startLocal();break;
+  case 'copykey':{
+    const k=DUCrypto.keyString(); if(!k)break;
+    if(navigator.clipboard)navigator.clipboard.writeText(k).then(()=>toast('Chiave copiata')).catch(()=>toast(k)); else toast(k); break}
+  case 'e2e-on': (async()=>{
+    if(!DUCrypto.supported()){toast('Questo browser non supporta la cifratura.');return}
+    try{await e2eEnable();S.showKey=true;render(true);await e2eMigrate()}catch(e){toast('Non riesco ad attivare la cifratura. Riprova.')}
+  })(); break;
+  case 'e2e-migrate': e2eMigrate(); break;
+  case 'showkey': S.showKey=!S.showKey; render(true); break;
   case 'w-share':{
     const txt='Entra in Cuoricino con il nostro codice: '+fmtCode(S.welcome&&S.welcome.code);
     if(navigator.share)navigator.share({text:txt}).catch(()=>{}); else if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast('Codice copiato')).catch(()=>toast(txt)); else toast(txt);
     break}
+  case 'revoke': S.confirmRevoke=true;render(true);break;
+  case 'revoke-no': S.confirmRevoke=false;render(true);break;
+  case 'revoke-yes': S.confirmRevoke=false; cloud.rpc('revoke_old_devices').then(n=>{toast(n>0?(n===1?'1 telefono scollegato':n+' telefoni scollegati'):'Nessun altro telefono da scollegare');render(true)}).catch(e=>{toast('Non riesco: '+((e&&e.message)||'aggiorna prima il database (vedi GUIDA)'));render(true)});break;
   case 'devcode': cloud.deviceCode().then(c=>{S.devCode=c;render(true)}).catch(e=>toast('Non riesco a creare il codice: '+(e&&e.message||'errore')));break;
   case 'leave': S.confirmLeave=true;render(true);break;
   case 'leave-no': S.confirmLeave=false;render(true);break;
@@ -1379,7 +1432,7 @@ document.addEventListener('click',e=>{
     (async()=>{
       try{await PUSH.disable()}catch(e){}
       await cloud.rpc('delete_couple');
-      cloud.leave(); try{localStorage.removeItem(LS);localStorage.removeItem('sint-notif')}catch(x){} mem.v=null;
+      cloud.leave(); DUCrypto.clear(); try{localStorage.removeItem(LS);localStorage.removeItem('sint-notif')}catch(x){} mem.v=null;
       toast('Tutto cancellato'); setTimeout(()=>{try{location.reload()}catch(x){}},700);
     })().catch(()=>{S.confirmWipe=false;toast('Non riesco a cancellare. Aggiorna prima il database (vedi GUIDA) e riprova.');render(true)});
     break}
@@ -1405,6 +1458,13 @@ document.addEventListener('submit',e=>{
   const kind=f.dataset.form, blur=()=>{if(document.activeElement&&document.activeElement.blur)document.activeElement.blur()};
   const g=id=>{const el=document.getElementById(id);return el?(el.value||'').trim():''};
   const err=document.getElementById('err'), fail=m=>{if(err){err.textContent=m;err.hidden=false}};
+  if(kind==='key'){
+    const v=g('f-key'); blur();
+    DUCrypto.tryKey(v,S.keycheck).then(async ok=>{
+      if(ok){await DUCrypto.setKey(v);S.keyErr='';toast('Chiave corretta');setTimeout(()=>{try{location.reload()}catch(x){}},400)}
+      else{S.keyErr='La chiave non è corretta. Controlla di averla copiata tutta.';render(true)}
+    }); return;
+  }
   if(kind==='join'){
     const code=g('f-code'); if(!code)return fail('Scrivi il codice.');
     blur(); cloud.join(code).then(()=>startCloud()).catch(e=>fail(e&&e.message||'Codice non valido.')); return;
@@ -1537,6 +1597,11 @@ async function startShared(dbm,um,id,viaCloud){
   },()=>{}));
   db.doc('couple/draw').onSnapshot(snap=>{const d=snap.exists?snap.data():null;S.draw=d?validDraw(d.i):null;rq()},()=>{});
   db.doc('couple/quick').onSnapshot(snap=>{S.quick=snap.exists?snap.data():null;rq()},()=>{});
+  db.doc('couple/keycheck').onSnapshot(snap=>{
+    S.keycheck=snap.exists?(snap.data().v||null):null;
+    if(!S.keycheck){S.keyOk=true;rq();return}
+    DUCrypto.verify(S.keycheck).then(ok=>{S.keyOk=ok;rq()});
+  },()=>{});
   db.collection('missions').orderBy('at','desc').limit(14).onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{o[d.id]=d.data()});S.missions=o;rq()},()=>{});
   db.doc('couple/scores').onSnapshot(snap=>{S.scores=snap.exists?Object.assign({A:0,B:0},snap.data()):{A:0,B:0};rq()},()=>{});
   db.collection('games').orderBy('at','desc').limit(40).onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{o[d.id]=Object.assign({},d.data(),{id:d.id})});S.games=o;syncGame();rq()},()=>{});
@@ -1554,6 +1619,7 @@ async function startShared(dbm,um,id,viaCloud){
   render();
 }
 async function boot(){
+  try{if(window.DUCrypto&&DUCrypto.supported())await DUCrypto.load()}catch(e){}
   render();
   const C=window.claude;
   if(C&&typeof C.use==='function'){

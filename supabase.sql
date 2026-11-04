@@ -129,3 +129,23 @@ begin
   delete from couples where id = cid; -- elimina a cascata membri, contenuti e iscrizioni alle notifiche
 end $$;
 grant execute on function delete_couple() to authenticated;
+
+-- ===== Telefono perso o sostituito: scollega i tuoi vecchi telefoni (versione 15) =====
+-- Toglie dalla coppia i telefoni che non sono né questo né quello del partner: da quel momento non leggono più nulla dal server.
+create or replace function revoke_old_devices() returns int language plpgsql security definer set search_path = public as $$
+declare cid uuid; my_slot text; n int;
+begin
+  if auth.uid() is null then raise exception 'non autenticato'; end if;
+  select couple into cid from members where uid = auth.uid() limit 1;
+  if cid is null then raise exception 'nessuna coppia'; end if;
+  select d.data->>'s' into my_slot from docs d where d.couple = cid and d.path = 'slots/' || auth.uid()::text and not d.deleted;
+  if my_slot is null then raise exception 'scegli prima il tuo profilo'; end if;
+  delete from members m
+   where m.couple = cid and m.uid <> auth.uid()
+     and not exists (select 1 from docs d where d.couple = cid and d.path = 'slots/' || m.uid::text and not d.deleted
+                       and d.data->>'s' is not null and d.data->>'s' <> my_slot);
+  get diagnostics n = row_count;
+  delete from push_subs where couple = cid and uid not in (select uid from members where couple = cid);
+  return n;
+end $$;
+grant execute on function revoke_old_devices() to authenticated;
