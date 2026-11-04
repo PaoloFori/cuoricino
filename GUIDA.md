@@ -113,3 +113,8 @@ Note:
 
 ### Come si controlla che funzioni
 La cartella `tests/` contiene le prove automatiche (vedi `tests/README.md`): cifratura, regole del database con utenti diversi, e una prova con due telefoni che verifica cosa riceve il server.
+
+## Novità versione 16: testi più naturali
+- **Genere:** ognuno sceglie come vuole essere scritto (Noi → "Come ti scrivono le domande", oppure dal riquadro in Home). Le forme come «stanco/a» diventano «stanco» o «stanca» per chi legge, e le risposte dell'altro si leggono al suo genere.
+- **Il nome al posto di "il partner":** le domande e le missioni usano il nome dell'altra persona.
+- **Domande vere:** ogni «Preferisci…» è ora una domanda ("Mare o montagna?", "Un massaggio con l'olio o un bagno in due?") e le domande a frammenti ("Pizza: quale?", "Casa dei sogni?") sono frasi complete. Le risposte già date non cambiano.

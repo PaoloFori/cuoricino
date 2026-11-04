@@ -228,14 +228,19 @@ const HOT_HONEST=[
 ];
 const HOT_NEVER=[`mandare un messaggio sporco 📱🔥`,`baciare qualcuno sotto la pioggia ☔`,`fare sesso sotto la doccia 🚿`,`ballare lento in cucina, mezzi nudi 💃`,`fare un sogno erotico con me 🌙`,`scrivere un biglietto osé ✉️`,`fare un massaggio sensuale 💆`,`lasciare un succhiotto 😘`,`fare un gioco di sguardi finito a letto 👀`,`toccarti pensando a me 🙈`];
 
+/* Testi più naturali: ogni "Preferisci…" diventa una domanda vera; le domande a frammenti diventano frasi. */
+const PREF_T=[`Mare o montagna?`,`Colazione dolce o salata?`,`Caffè o tè?`,`Estate o inverno?`,`Pizza o sushi?`,`Cinema o serie a casa?`,`Gatti o cani?`,`Alba o tramonto?`,`Città o campagna?`,`Treno o aereo?`,`Libro o film?`,`Cucinare o ordinare?`,`Balli lenti o karaoke?`,`Pioggia o neve?`,`Fotografie o video?`,`Messaggi o chiamate?`,`Sorpresa o programma?`,`Spiaggia o piscina?`,`Sera in casa o sera fuori?`,`Cena a lume di candela o picnic?`,`Gelato o torta?`,`Regalo comprato o fatto a mano?`,`Giornata a letto con la pioggia o giornata al sole?`,`Concerto dal vivo o playlist in auto?`,`Tisana o cioccolata calda?`,`Passeggiata o bicicletta?`,`Weekend lungo o una settimana intera?`,`Vacanza di avventura o vacanza relax?`,`Sveglia presto o dormire fino a tardi?`,`Panna o cioccolato?`,`Fragole o lamponi?`,`Pasta o riso?`,`Alba in montagna o tramonto sul mare?`,`Cena con amici o cena in due?`,`Ballare o cantare?`,`Parlare o ascoltare?`,`Anniversario in grande o anniversario intimo?`,`Una lettera scritta a mano o un messaggio vocale?`,`Fiori o cioccolatini?`,`Teatro o concerto?`,`Giocare o guardare?`,`Fare le foto o essere nelle foto?`,`Natale o Capodanno?`,`Una sorpresa romantica o un gesto di ogni giorno?`,`Rose rosse o rose rosa?`,`Baci sulla guancia o abbracci lunghi?`,`Colazione a letto o colazione al bar?`,`Cena romantica o serata pizza e film?`,`Weekend in una città d'arte o in una baita?`,`Mare d'inverno o montagna d'estate?`,`Museo o mercatino?`,`Surf o sci?`,`Giardino o terrazza?`,`Casa grande o casa piccola e accogliente?`,`Gita in barca o gita in bici?`,`Corso di cucina o corso di ballo?`,`Fotografie stampate o album digitale?`,`Ricordare o dimenticare e ripartire?`,`Tè con i biscotti o caffè con il dolce?`,`Maratona di serie o maratona di film?`,`Dormire abbracciati o ognuno col suo spazio?`,`Vacanza all'estero o vacanza in Italia?`,`Aperitivo o dopocena?`,`Zuppa o insalata?`,`Cena di pesce o cena di carne?`,`Pigiama o vestaglia?`,`Auto o moto?`,`Sorprendere o essere sorpreso/a?`,`Cucinare per due o cucinare con amici?`,`Rose o margherite?`,`Vino rosso o vino bianco?`,`Frutta fresca o dolce al cucchiaio?`,`Un giorno di festa o un giorno di pace?`,`Gioco da tavolo o videogioco?`,`Campeggio o albergo di lusso?`,`Parlare di tutto o tacere insieme?`,`Lettere d'amore o canzoni dedicate?`,`Un bacio sulla fronte o sulla mano?`,`Una carezza o un massaggio?`,`Fare tardi o alzarsi presto?`];
+const HOT_PREF_T=[`Un massaggio con l'olio o un bagno in due?`,`Luce di candela o luci spente?`,`Un bacio sul collo o sull'interno coscia?`,`Sussurri all'orecchio o messaggi sporchi?`,`Un ballo lento mezzi nudi o una cena in intimo a lume di candela?`,`Una doccia insieme o la colazione a letto, nudi?`,`Sesso la mattina o la notte?`,`Fare tu il primo passo o lasciare il comando a {altro}?`,`Un hotel con vasca idromassaggio o casa nostra, tutta per noi?`,`Vino rosso sul divano o champagne a letto?`,`Coccole lente o passione improvvisa?`,`Camicia e niente altro: la tua o la mia?`,`Una benda sugli occhi o i polsi legati con una sciarpa?`,`Un giorno di coccole o una notte di sesso?`,`Una playlist romantica o una da camera da letto?`,`Una spa a due o un'isola deserta, nudi?`,`Giochi di sguardi o giochi di parole sporche?`,`Un bacio lunghissimo o tanti baci in giro per il corpo?`,`Dolcezza o audacia?`,`Una lettera maliziosa o un vocale sussurrato?`,`Una cena afrodisiaca o panna e fragole sul corpo?`,`Una sera di sorprese o una sera di coccole?`,`Il tuo profumo o la tua maglietta che sa di te?`,`Un abbraccio che dura o un bacio che sorprende?`];
+
 /* Mazzo unico. Ordine fisso: ref = 'k' + indice. */
 const DECK=[];
-PREFER.forEach(p=>DECK.push({t:`Preferisci…`,o:p.split('|'),cat:'light'}));
-WHO.forEach(w=>DECK.push({t:`Chi dei due `+w,who:true,cat:'fun'}));
+PREFER.forEach((p,i)=>DECK.push({t:PREF_T[i],o:p.split('|'),cat:'light',pref:true}));
+const NOSLASH=w=>w.replace(/\b([A-Za-zàèéìòù']*[a-zàèéìòù])([oe])\/a\b/g,'$1$2');
+WHO.forEach(w=>DECK.push({t:`Chi dei due `+NOSLASH(w),who:true,cat:'fun'}));
 HONEST.forEach(h=>DECK.push({t:h.t,o:h.o,cat:'love'}));
 NEVER.forEach(n=>DECK.push({t:`Ti è mai capitato di `+n+`?`,o:[`Mai`,`Una volta`,`Più volte`],cat:'fun'}));
-HOT_PREFER.forEach(p=>DECK.push({t:`Preferisci…`,o:p.split('|').concat(NOPE),cat:'hot',hot:true}));
-HOT_WHO.forEach(w=>DECK.push({t:`Chi dei due `+w,who:true,cat:'hot',hot:true,nope:true}));
+HOT_PREFER.forEach((p,i)=>DECK.push({t:HOT_PREF_T[i],o:p.split('|').concat(NOPE),cat:'hot',hot:true,pref:true}));
+HOT_WHO.forEach(w=>DECK.push({t:`Chi dei due `+NOSLASH(w),who:true,cat:'hot',hot:true,nope:true}));
 HOT_HONEST.forEach(h=>DECK.push({t:h.t,o:h.o,cat:'hot',hot:true}));
 HOT_NEVER.forEach(n=>DECK.push({t:`Ti è mai capitato di `+n+`?`,o:[`Mai`,`Una volta`,`Più volte`,NOPE],cat:'hot',hot:true}));
 const BASE_N=DECK.length;
@@ -1554,7 +1559,7 @@ const DADI={
  zone:[[1,`il collo`],[1,`l'orecchio`],[1,`la schiena`],[1,`le mani`],[1,`il viso`],[1,`la pancia`],[1,`le spalle`],[1,`l'interno del polso`],
   [2,`l'interno coscia`],[2,`il petto`],[2,`i fianchi`],[2,`la nuca`],[2,`il sedere`],[2,`l'inguine, sopra i vestiti`],[2,`le caviglie`],
   [3,`i capezzoli`],[3,`il sedere nudo`],[3,`l'inguine`],[3,`tra le gambe`],[3,`il sesso`],[3,`l'interno coscia, vicino al sesso`]],
- how:[[1,`per 30 secondi`],[1,`lentamente`],[1,`guardandolo/a negli occhi`],[1,`a occhi chiusi`],[1,`per un minuto intero`],
+ how:[[1,`per 30 secondi`],[1,`lentamente`],[1,`guardando negli occhi l'altro/a`],[1,`a occhi chiusi`],[1,`per un minuto intero`],
   [2,`senza usare le mani`],[2,`poi fermati e riparti`],[2,`finché l'altro/a dice stop`],[2,`sempre più piano`],
   [3,`finché l'altro/a trema`],[3,`senza fretta, per tre minuti`],[3,`finché l'altro/a ti chiede di più`]]
 };
@@ -1670,65 +1675,65 @@ const TALK=[
 
 /* Missioni segrete: k = say (far dire), do (far fare), photo (foto). hot = solo con i contenuti hot sbloccati. */
 const MISSIONS=[
- {k:'say',t:`Fai dire al tuo partner la parola «pinguino» senza dirla tu per prima.`},
- {k:'say',t:`Fai dire al tuo partner «ti amo» senza chiederglielo.`},
- {k:'say',t:`Fai raccontare al tuo partner un ricordo d'infanzia che non conosci.`},
- {k:'say',t:`Fai dire al tuo partner una barzelletta.`},
- {k:'say',t:`Fai dire al tuo partner tre cose che ama di sé.`},
- {k:'say',t:`Fai dire al tuo partner la parola «tramonto» in una frase.`},
- {k:'say',t:`Fai dire al tuo partner qual è il suo film preferito di sempre e perché.`},
- {k:'say',t:`Fai dire al tuo partner un complimento sincero su di te, senza chiederlo.`},
- {k:'say',t:`Fai dire al tuo partner una parola in un'altra lingua.`},
- {k:'say',t:`Fai dire al tuo partner il nome del suo primo amore.`},
- {k:'say',t:`Fai dire al tuo partner «hai ragione tu» (con una scusa credibile).`},
- {k:'say',t:`Fai dire al tuo partner quale supereroe vorrebbe essere.`},
- {k:'say',t:`Fai dire al tuo partner la parola «cioccolato» e «luna» nella stessa frase.`},
- {k:'say',t:`Fai dire al tuo partner un sogno che ha nel cassetto, senza fargli domande dirette.`},
- {k:'say',t:`Fai dire al tuo partner il nome di una canzone che gli ricorda noi.`},
- {k:'say',t:`Fai dire al tuo partner «ho fame» (senza nominare il cibo tu).`},
- {k:'say',t:`Fai dire al tuo partner la cosa più divertente che gli è successa questa settimana.`},
- {k:'say',t:`Fai dire al tuo partner la parola «elefante» senza che se ne accorga.`},
- {k:'do',t:`Fai in modo che il tuo partner ti faccia un abbraccio lungo (almeno 10 secondi) senza chiederlo.`},
- {k:'do',t:`Fai cantare al tuo partner qualche parola di una canzone.`},
- {k:'do',t:`Fai fare al tuo partner un balletto di 10 secondi.`},
- {k:'do',t:`Fai fare al tuo partner un caffè o un tè per te, senza chiederlo direttamente.`},
- {k:'do',t:`Fai sedere il tuo partner sulle tue gambe.`},
- {k:'do',t:`Fai fare al tuo partner una smorfia buffa.`},
- {k:'do',t:`Fai fare al tuo partner un massaggio di un minuto alle spalle, senza chiederlo.`},
- {k:'do',t:`Fai alzare il tuo partner in piedi per ballare un lento con te.`},
- {k:'do',t:`Fai scrivere al tuo partner un bigliettino dolce per te.`},
- {k:'do',t:`Fai fare al tuo partner un selfie con te.`},
- {k:'do',t:`Fai fare al tuo partner il verso di un animale.`},
- {k:'do',t:`Fai prendere al tuo partner una tua cosa e portartela, senza chiedergliela.`},
- {k:'do',t:`Fai fare al tuo partner 10 flessioni o 10 squat con una scusa.`},
- {k:'do',t:`Fai portare al tuo partner un bicchiere d'acqua e un bacio.`},
- {k:'do',t:`Fai guardare al tuo partner un video che ti piace, fino alla fine.`},
- {k:'do',t:`Fai fare al tuo partner una foto a te in una posa buffa.`},
- {k:'photo',t:`Scatta una foto a qualcosa di rosso, senza che il tuo partner capisca perché.`},
+ {k:'say',t:`Fai dire a {altro} la parola «pinguino» senza dirla tu per prima.`},
+ {k:'say',t:`Fai dire a {altro} «ti amo» senza chiederglielo.`},
+ {k:'say',t:`Fai raccontare a {altro} un ricordo d'infanzia che non conosci.`},
+ {k:'say',t:`Fai dire a {altro} una barzelletta.`},
+ {k:'say',t:`Fai dire a {altro} tre cose che ama di sé.`},
+ {k:'say',t:`Fai dire a {altro} la parola «tramonto» in una frase.`},
+ {k:'say',t:`Fai dire a {altro} qual è il suo film preferito di sempre e perché.`},
+ {k:'say',t:`Fai dire a {altro} un complimento sincero su di te, senza chiederlo.`},
+ {k:'say',t:`Fai dire a {altro} una parola in un'altra lingua.`},
+ {k:'say',t:`Fai dire a {altro} il nome del suo primo amore.`},
+ {k:'say',t:`Fai dire a {altro} «hai ragione tu» (con una scusa credibile).`},
+ {k:'say',t:`Fai dire a {altro} quale supereroe vorrebbe essere.`},
+ {k:'say',t:`Fai dire a {altro} la parola «cioccolato» e «luna» nella stessa frase.`},
+ {k:'say',t:`Fai dire a {altro} un sogno che ha nel cassetto, senza fargli domande dirette.`},
+ {k:'say',t:`Fai dire a {altro} il nome di una canzone che gli ricorda noi.`},
+ {k:'say',t:`Fai dire a {altro} «ho fame» (senza nominare il cibo tu).`},
+ {k:'say',t:`Fai dire a {altro} la cosa più divertente che gli è successa questa settimana.`},
+ {k:'say',t:`Fai dire a {altro} la parola «elefante» senza che se ne accorga.`},
+ {k:'do',t:`Fai in modo che {altro} ti faccia un abbraccio lungo (almeno 10 secondi) senza chiederlo.`},
+ {k:'do',t:`Fai cantare a {altro} qualche parola di una canzone.`},
+ {k:'do',t:`Fai fare a {altro} un balletto di 10 secondi.`},
+ {k:'do',t:`Fai fare a {altro} un caffè o un tè per te, senza chiederlo direttamente.`},
+ {k:'do',t:`Fai sedere {altro} sulle tue gambe.`},
+ {k:'do',t:`Fai fare a {altro} una smorfia buffa.`},
+ {k:'do',t:`Fai fare a {altro} un massaggio di un minuto alle spalle, senza chiederlo.`},
+ {k:'do',t:`Fai alzare {altro} in piedi per ballare un lento con te.`},
+ {k:'do',t:`Fai scrivere a {altro} un bigliettino dolce per te.`},
+ {k:'do',t:`Fai fare a {altro} un selfie con te.`},
+ {k:'do',t:`Fai fare a {altro} il verso di un animale.`},
+ {k:'do',t:`Fai prendere a {altro} una tua cosa e portartela, senza chiedergliela.`},
+ {k:'do',t:`Fai fare a {altro} 10 flessioni o 10 squat con una scusa.`},
+ {k:'do',t:`Fai portare a {altro} un bicchiere d'acqua e un bacio.`},
+ {k:'do',t:`Fai guardare a {altro} un video che ti piace, fino alla fine.`},
+ {k:'do',t:`Fai fare a {altro} una foto a te in una posa buffa.`},
+ {k:'photo',t:`Scatta una foto a qualcosa di rosso, senza che {altro} capisca perché.`},
  {k:'photo',t:`Fai una foto con tre oggetti dello stesso colore.`},
  {k:'photo',t:`Fatti fare una foto in cui fai una faccia buffa, senza dire perché.`},
  {k:'photo',t:`Fai un selfie con un oggetto verde.`},
  {k:'photo',t:`Fotografa la cosa più piccola che trovi in casa.`},
  {k:'photo',t:`Fai una foto a un'ombra che sembra qualcos'altro.`},
- {k:'photo',t:`Fai una foto a qualcosa che ti ricorda il tuo partner, senza dirglielo.`},
+ {k:'photo',t:`Fai una foto a qualcosa che ti ricorda {altro}, senza dirglielo.`},
  {k:'photo',t:`Fatti fare una foto mentre indossi qualcosa di giallo.`},
  {k:'photo',t:`Fai una foto a tre oggetti che iniziano con la stessa lettera.`},
  {k:'photo',t:`Fai una foto a un oggetto blu e uno arancione insieme.`},
- {k:'photo',t:`Fai una foto al cielo, ovunque sei, senza che il tuo partner lo noti.`},
+ {k:'photo',t:`Fai una foto al cielo, ovunque sei, senza che {altro} lo noti.`},
  {k:'photo',t:`Fatti fare una foto in cui tieni in mano un oggetto assurdo.`},
  {k:'photo',t:`Fai un selfie con un oggetto a forma di cuore (anche trovato per caso).`},
  {k:'photo',t:`Fai una foto a qualcosa di rotondo e una di quadrato, nello stesso scatto.`},
  {k:'photo',t:`Fai una foto a due oggetti che stanno bene insieme, a sorpresa.`},
- {k:'say',hot:1,t:`Fai dire al tuo partner una frase maliziosa, senza chiedergliela.`},
- {k:'say',hot:1,t:`Fai dire al tuo partner cosa gli piace di più del tuo corpo.`},
- {k:'say',hot:1,t:`Fai dire al tuo partner una fantasia che non ti ha mai detto.`},
- {k:'say',hot:1,t:`Fai dire al tuo partner cosa vorrebbe fare stasera con te.`},
- {k:'say',hot:1,t:`Fai dire al tuo partner la parola più sporca che gli viene in mente, ridendo.`},
- {k:'do',hot:1,t:`Fai dare al tuo partner un bacio lento sul collo.`},
- {k:'do',hot:1,t:`Fai fare al tuo partner un massaggio sensuale, senza chiederlo.`},
- {k:'do',hot:1,t:`Fai spogliare il tuo partner di un capo, senza chiederlo.`},
- {k:'do',hot:1,t:`Fai in modo che sia il tuo partner a fare il primo passo stasera.`},
- {k:'do',hot:1,t:`Fai mordicchiare piano il tuo orecchio dal tuo partner.`},
+ {k:'say',hot:1,t:`Fai dire a {altro} una frase maliziosa, senza chiedergliela.`},
+ {k:'say',hot:1,t:`Fai dire a {altro} cosa gli piace di più del tuo corpo.`},
+ {k:'say',hot:1,t:`Fai dire a {altro} una fantasia che non ti ha mai detto.`},
+ {k:'say',hot:1,t:`Fai dire a {altro} cosa vorrebbe fare stasera con te.`},
+ {k:'say',hot:1,t:`Fai dire a {altro} la parola più sporca che gli viene in mente, ridendo.`},
+ {k:'do',hot:1,t:`Fai dare a {altro} un bacio lento sul collo.`},
+ {k:'do',hot:1,t:`Fai fare a {altro} un massaggio sensuale, senza chiederlo.`},
+ {k:'do',hot:1,t:`Fai spogliare {altro} di un capo, senza chiederlo.`},
+ {k:'do',hot:1,t:`Fai in modo che sia {altro} a fare il primo passo stasera.`},
+ {k:'do',hot:1,t:`Fai mordicchiare piano il tuo orecchio da {altro}.`},
  {k:'photo',hot:1,t:`Fatti fare una foto sexy ma elegante, solo per voi.`},
  {k:'photo',hot:1,t:`Fai una foto a un posto di casa dove vorresti fare l'amore.`}
 ];
@@ -1805,6 +1810,13 @@ const PHQ=[
  ['xxx',`Cosa ti piacerebbe che facessimo prima, durante e dopo il sesso, perché sia perfetto?`]
 ].forEach(r=>{const o=r.slice(2);DECK.push({t:r[1],o:o.length?o.concat(NOPE):null,cat:'hot',sub:r[0],hot:true})});
 PHQ.forEach(t=>DECK.push({t:t,o:null,cat:'fun',ph:true}));
+
+
+/* Domande rimaste a frammenti: ora sono frasi vere. Stessi numeri e stesse risposte di prima. */
+const FIXT={477:`Com'è la tua vacanza ideale?`,481:`Come sei con la valigia?`,492:`Che cena ti sembra perfetta?`,496:`Com'è la tua colazione ideale?`,498:`Che pizza ordini di solito?`,506:`Dove sarebbe la casa dei tuoi sogni?`,509:`Che animale vorresti in casa?`,532:`Qual è il film che potresti rivedere all'infinito?`,537:`Che genere di film preferisci?`,563:`Che superpotere vorresti avere?`,567:`Qual è il tuo talento più inutile?`,571:`Qual è la tua stagione preferita?`,573:`Mare, montagna, lago o città?`,584:`Preferisci lavorare (o studiare) da casa o fuori?`,591:`Com'è la tua pausa pranzo ideale?`,625:`Quanti amici stretti hai, più o meno?`,668:`Dopo una giornata pesante, cosa scegli?`,676:`Come passeresti una giornata di totale riposo?`,692:`Dove ti perderesti volentieri per un giorno?`,695:`Che tempo ti piace di più?`,699:`Ti piace il campeggio?`,703:`Dove coltiveresti le tue piante?`,714:`Quale elemento senti più tuo?`,730:`Tra questi, quale superpotere sceglieresti?`,747:`Hai qualche sogno ricorrente? Raccontalo.`,811:`Di notte, come tieni le tapparelle?`,824:`Per creare atmosfera in casa, cosa accendi?`,851:`Con cosa giochi di più?`,855:`Ti piace farti i selfie?`,865:`Ascolti podcast?`,870:`Usi lo smartwatch?`,963:`Chi è il tuo supereroe preferito?`,1045:`Ti capita di comprare d'impulso?`,1064:`Hai qualche superstizione?`,816:`Chi cucina più spesso, tra voi due?`,839:`Come gestite le faccende di casa, tu e {altro}?`,1013:`Per te, cosa rende una persona un bravo compagno o una brava compagna?`};
+const FIXO={481:[`Pronto/a il giorno prima`,`All'ultimo minuto`,`Ci metto dentro tutto`,`Solo uno zaino`],816:[`Io`,`{altro}`,`A turno`,`Ordiniamo`],839:[`Dividiamo equamente`,`A turno`,`Chi ha tempo`,`Faccio quasi tutto io`]};
+Object.keys(FIXT).forEach(i=>{if(DECK[i])DECK[i].t=FIXT[i]});
+Object.keys(FIXO).forEach(i=>{if(DECK[i]&&DECK[i].o&&DECK[i].o.length===FIXO[i].length)DECK[i].o=FIXO[i]});
 
 /* Resoconto del mese: pool di domande (3 fisse + da 3 a 6 scelte dal mese) */
 const RECAP=[

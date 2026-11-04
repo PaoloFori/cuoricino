@@ -61,7 +61,7 @@ const phHTML=id=>{const im=safeImg(qimg(id));return im?`<img class="qimg" src="$
 const isPh=v=>typeof v==='string'&&v.indexOf('ph:')===0;
 function pill(slot,txt,wait){
   if(wait)return `<div class="pill wait"><i class="dot ${slot}"></i><span class="who">${esc(nm(slot))}</span><span class="val">In attesa</span></div>`;
-  return `<div class="pill ${slot}"><i class="dot ${slot}"></i><span class="who">${esc(nm(slot))}</span><span class="val">${isPh(txt)?phHTML(txt.slice(3)):esc(txt)}</span></div>`;
+  return `<div class="pill ${slot}"><i class="dot ${slot}"></i><span class="who">${esc(nm(slot))}</span><span class="val">${isPh(txt)?phHTML(txt.slice(3)):esc(gx(txt,slot))}</span></div>`;
 }
 
 /* ---------- Render: coalescente, mai durante un gioco a canvas ---------- */
@@ -267,7 +267,7 @@ const isNewDay=d=>d>=DAY_NEW;
 const DP={open:[],multi:[],hot:[],xxx:[],xxxAll:[]};
 DECK.forEach((q,i)=>{
   if(q.hot){(q.sub==='xxx'?DP.xxxAll:DP.hot).push(i);return}
-  if(q.who||q.t==='Preferisci…'||q.ph)return;
+  if(q.who||q.pref||q.ph)return;
   if(!q.o)DP.open.push(i); else if(q.o.length>=3)DP.multi.push(i);
 });
 DP.xxx=DP.xxxAll.slice(0,63); /* i primi 63 restano quelli di prima: dal 8 novembre 2026 entrano anche i nuovi */
@@ -342,7 +342,7 @@ function answerBlock(it){
   const m=me(), o=other(m), mine=ans(m,it.key), th=ans(o,it.key);
   const show=v=>shw(it,v);
   if(!done(mine)){
-    if(it.o)return `<div class="opts" style="--me:var(--${m==='A'?'a':'b'})">${it.o.map((x,i)=>`<button class="opt" data-act="pick" data-key="${esc(it.key)}" data-i="${i}">${esc(x)}</button>`).join('')}</div>${custForm(it,false)}${phBtn(it,false)}`;
+    if(it.o)return `<div class="opts" style="--me:var(--${m==='A'?'a':'b'})">${it.o.map((x,i)=>`<button class="opt" data-act="pick" data-key="${esc(it.key)}" data-i="${i}">${esc(gx(x))}</button>`).join('')}</div>${custForm(it,false)}${phBtn(it,false)}`;
     return `${it.ph?phBtn(it,false):''}<form class="form tform" data-form="tans" data-key="${esc(it.key)}" novalidate><input maxlength="160" autocomplete="off" placeholder="${it.ph?'Oppure descrivila a parole':'Scrivi la tua risposta'}"><button class="btn" type="submit">Invia</button></form>${it.ph?'':phBtn(it,false)}`;
   }
   if(!done(th)){
@@ -524,7 +524,7 @@ const MKIND={say:'Far dire',do:'Far fare',photo:'Foto'};
 function missionCard(t){
   const m=me(), md=S.missions[msId(t,m)]||{}, od=S.missions[msId(t,other(m))]||{}, mi=missionFor(t,m);
   const av=['A','B'].map(x=>{const dn=(S.missions[msId(t,x)]||{}).done;return `<span class="ca2" style="position:relative">${avatarHTML(x,'s')}${dn?'<span class="ckb"><svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5"/></svg></span>':''}</span>`}).join('');
-  const txt=md.done?`<p style="font-size:14px;margin-top:6px"><b>Compiuta ✓</b> ${od.done?'':`· aspetta che ${esc(nm(other(m)))} compia la sua`}</p>`:`<p style="font-size:14px;margin-top:6px"><b>${MKIND[mi.k]}:</b> ${esc(mi.t)}</p>`;
+  const txt=md.done?`<p style="font-size:14px;margin-top:6px"><b>Compiuta ✓</b> ${od.done?'':`· aspetta che ${esc(nm(other(m)))} compia la sua`}</p>`:`<p style="font-size:14px;margin-top:6px"><b>${MKIND[mi.k]}:</b> ${esc(gx(mi.t))}</p>`;
   return `<button class="dc cs msn" data-act="mission"><div><span class="tg">${od.done&&!md.done?'La sua è svelata · ':''}Segreta, solo per te</span><h3>Missione del giorno</h3>${txt}</div><div class="ft"><span class="avs">${av}</span><span class="go">${md.done?'VEDI':'VAI ALLA MISSIONE'}</span></div></button>`;
 }
 function missionHTML(){
@@ -532,22 +532,22 @@ function missionHTML(){
   const md=S.missions[msId(t,m)]||{}, od=S.missions[msId(t,o)]||{};
   let mine;
   if(md.done){
-    mine=`<span class="tag">${MKIND[mi.k]}</span><h3 class="qtext">${esc(mi.t)}</h3><p class="verdict eq">${heartSvg()}Compiuta! ${esc(nm(o))} ora lo sa.</p>${md.note?`<p>«${esc(md.note)}»</p>`:''}${md.ph?phHTML(md.ph):''}`;
+    mine=`<span class="tag">${MKIND[mi.k]}</span><h3 class="qtext">${esc(gx(mi.t))}</h3><p class="verdict eq">${heartSvg()}Compiuta! ${esc(nm(o))} ora lo sa.</p>${md.note?`<p>«${esc(md.note)}»</p>`:''}${md.ph?phHTML(md.ph):''}`;
   }else if(S.msn&&S.msn.open){
     const f=S.msn;
-    mine=`<span class="tag">${MKIND[mi.k]}</span><h3 class="qtext">${esc(mi.t)}</h3>
+    mine=`<span class="tag">${MKIND[mi.k]}</span><h3 class="qtext">${esc(gx(mi.t))}</h3>
      <div class="form" style="margin-top:10px"><label for="f-mn">Com'è andata? Racconta come ci sei riuscito/a${mi.k==='photo'?' (qui serve una foto)':''}</label>
       <textarea id="f-mn" data-d="msn.note" maxlength="300" placeholder="Raccontalo">${esc(f.note||'')}</textarea></div>
      ${f.ph?phHTML(f.ph):''}
      <div class="actions"><button class="btn ghost sm" data-act="mph">📷 ${f.ph?'Cambia foto':'Aggiungi una foto'}</button></div>
      <div class="actions"><button class="btn" data-act="mfinish">Rivela all'altro/a</button><button class="btn ghost" data-act="mcancel">Annulla</button></div>`;
   }else{
-    mine=`<span class="tag">${MKIND[mi.k]}</span><h3 class="qtext">${esc(mi.t)}</h3>
+    mine=`<span class="tag">${MKIND[mi.k]}</span><h3 class="qtext">${esc(gx(mi.t))}</h3>
      <p class="note" style="margin-top:6px">Non dire niente: ${esc(nm(o))} non deve saperlo. Quando ce l'hai fatta premi "Missione compiuta" e racconta com'è andata.</p>
      <div class="actions"><button class="btn" data-act="mdone">Missione compiuta</button>${md.sk?'':'<button class="btn ghost" data-act="mskip">Cambiala (una volta)</button>'}</div>`;
   }
   const theirs=od.done
-    ?`<span class="tag">${MKIND[omi.k]}</span><h3 class="qtext">${esc(omi.t)}</h3><p class="note">Ecco cosa doveva riuscire a ottenere da te.</p>${od.note?`<p>«${esc(od.note)}»</p>`:''}${od.ph?phHTML(od.ph):''}`
+    ?`<span class="tag">${MKIND[omi.k]}</span><h3 class="qtext">${esc(gx(omi.t,o))}</h3><p class="note">Ecco cosa doveva riuscire a ottenere da te.</p>${od.note?`<p>«${esc(od.note)}»</p>`:''}${od.ph?phHTML(od.ph):''}`
     :`<p>${esc(nm(o))} ha una missione segreta su di te. Scoprirai cosa era quando dirà che è compiuta. 👀</p>`;
   return headerHTML()+`<section class="card"><p class="eyebrow">La tua missione segreta</p>${mine}</section>
    <section class="card"><p class="eyebrow">La missione di ${esc(nm(o))} per te</p>${theirs}</section>
@@ -592,6 +592,29 @@ function hotBannerHTML(){
   return '';
 }
 /* ---------- Notifiche push (server: Supabase). Vedi GUIDA.md ---------- */
+/* ---------- Testi su misura: genere e nomi ----------
+   Le domande hanno forme come "stanco/a". Ognuno sceglie come vuole essere scritto (maschile o femminile) e il testo si adatta:
+   alla persona che legge, e per le risposte dell'altro/a al genere di chi ha risposto. {altro} diventa il nome del partner. */
+const gOf=slot=>(S.answers[slot]||{}).g||null;
+function gx(s,slot){
+  if(typeof s!=='string')return s;
+  slot=slot||me()||'A';
+  if(s.indexOf('{altro}')>=0)s=s.replace(/\{altro\}/g,nm(other(slot)));
+  if(s.indexOf('/')<0)return s;
+  const mine=gOf(slot), theirs=gOf(other(slot));
+  if(!mine&&!theirs)return s;
+  s=s.replace(/\b([Ii])l\/la\b/g,(m,i)=>mine?(mine==='f'?(i==='I'?'La':'la'):m.slice(0,2)):m)
+     .replace(/\b([Uu])n\/a\b/g,(m,u)=>mine?(mine==='f'?u+'na':u+'n'):m)
+     .replace(/\b([Ll])o\/la\b/g,(m,l)=>mine?(mine==='f'?l+'a':l+'o'):m);
+  return s.replace(/\b([A-Za-zÀ-ÿ']*[a-zà-ÿ])([oe])\/a\b/g,(m,st,v)=>{
+    const g=/altr$/i.test(st)?theirs:mine; if(!g)return m;
+    return g==='f'?st+'a':st+v;
+  });
+}
+function genderBannerHTML(){
+  const m=me(); if(!m||gOf(m)||!(S.mode==='local'||S.watchOk))return '';
+  return `<section class="banner warm"><b>Come vuoi che ti scriviamo?</b> Le domande si adattano: «stanco» o «stanca», «curioso» o «curiosa».<div class="actions" style="margin-top:8px"><button class="btn sm" data-act="setgender" data-g="m">Al maschile</button><button class="btn sm" data-act="setgender" data-g="f">Al femminile</button></div></section>`;
+}
 const PUSH={
   last:{},
   cfg:()=>window.SINTONIA_CFG||{},
@@ -731,7 +754,7 @@ function homeHTML(){
   if(S.view&&S.view.t==='prof')return profHTML();
   if(S.view&&S.view.t==='story')return storyHTML();
   const streakN=streak();
-  return headerHTML()+duoHTML()+statsHTML()+reminderHTML()+hotBannerHTML()+
+  return headerHTML()+duoHTML()+statsHTML()+reminderHTML()+hotBannerHTML()+genderBannerHTML()+
    `<div class="sec"><div><h3>Attività quotidiane</h3><p class="timer">Prossimo in <span id="cd">${cdText()}</span></p></div>${streakChip(streakN)}</div>`+
    dailyCards()+`<div class="sec"><h3>Note</h3></div>`+notesHTML()+hdiv();
 }
@@ -745,7 +768,7 @@ function dailyHTML(){
   const k=S.view.k, it=dailyItem(k,todayStr());
   const title=k==='d'?'Domanda del giorno':k==='w'?'Chi è più probabile?':'Conversazione 18+';
   return headerHTML()+`<section class="card"><div class="qhead"><p class="eyebrow">${title}</p>${k==='x'?'<span class="tag hot" style="margin:0">18+</span>':''}</div>
-   <h2 class="qtext">${esc(it.t)}</h2>${answerBlock(it)}</section>${done(ans('A',it.key))&&done(ans('B',it.key))?chatHTML(it.key,'Parlatene insieme'):''}${backBtn('back','Torna alla home')}`;
+   <h2 class="qtext">${esc(gx(it.t))}</h2>${answerBlock(it)}</section>${done(ans('A',it.key))&&done(ans('B',it.key))?chatHTML(it.key,'Parlatene insieme'):''}${backBtn('back','Torna alla home')}`;
 }
 function profHTML(){
   const m=me(), a=S.answers[m]||{}, ns=activeStories(m).length;
@@ -800,8 +823,8 @@ function deckQHTML(){
   const dr=drawIt();
   if(!dr){S.view=null;return quizHTML()}
   const it=dr.it, q=dr.q, both=done(ans('A',it.key))&&done(ans('B',it.key));
-  const kind=q.mine?(q.o?'Vostra':'Vostra · risposta libera'):q.who?'Chi dei due?':!q.o?'Risposta libera':q.t.indexOf('Preferisci…')===0?'Preferisci':'Sinceramente', ctag=(!q.hot&&q.cat)?dcatName(q.cat):'';
-  return headerHTML()+`<section class="card"><span class="tag ${q.hot?'hot':''}">${q.hot?'Hot · ':''}${esc(kind)}${ctag?' · '+esc(ctag):''}</span><h3 class="qtext">${esc(it.t)}</h3>${answerBlock(it)}
+  const kind=q.mine?(q.o?'Vostra':'Vostra · risposta libera'):q.who?'Chi dei due?':!q.o?'Risposta libera':q.pref?'Preferisci':'Sinceramente', ctag=(!q.hot&&q.cat)?dcatName(q.cat):'';
+  return headerHTML()+`<section class="card"><span class="tag ${q.hot?'hot':''}">${q.hot?'Hot · ':''}${esc(kind)}${ctag?' · '+esc(ctag):''}</span><h3 class="qtext">${esc(gx(it.t))}</h3>${answerBlock(it)}
    <div class="actions"><button class="btn ${both?'':'ghost'}" data-act="draw">${heartSvg()}${both?'Pesca un\'altra':'Salta'}</button></div></section>${both?chatHTML(it.key,'Parlatene insieme'):''}${backBtn('back','Torna al quiz')}`;
 }
 function quickHTML(){
@@ -865,10 +888,10 @@ function runHTML(){
   const src=srcOf(S.view.src), items=src.items, i=S.view.i, it=items[i], m=me(), cur=ans(m,it.key);
   const segs=items.map((_,j)=>`<span class="seg ${j<i?'done':''} ${j===i?'cur':''}"></span>`).join('');
   const body=it.o
-    ?`<div class="opts">${it.o.map((x,k)=>`<button class="opt ${cur===k?'sel':''}" data-act="ans" data-i="${k}">${esc(x)}</button>`).join('')}</div>${custForm(it,true,cur)}${phBtn(it,true)}`
+    ?`<div class="opts">${it.o.map((x,k)=>`<button class="opt ${cur===k?'sel':''}" data-act="ans" data-i="${k}">${esc(gx(x))}</button>`).join('')}</div>${custForm(it,true,cur)}${phBtn(it,true)}`
     :`${it.ph?phBtn(it,true):''}<form class="form tform" data-form="tans" data-run="1" data-key="${esc(it.key)}" novalidate><input maxlength="160" autocomplete="off" placeholder="${it.ph?'Oppure descrivila a parole':'Scrivi la tua risposta'}" value="${esc(typeof cur==='string'&&!isPh(cur)?cur:'')}"><button class="btn" type="submit">Invia</button></form>${it.ph?'':phBtn(it,true)}`;
   return headerHTML()+`<section class="card run ${m}"><div class="qhead"><p class="eyebrow">${esc(src.title)} · ${i+1} di ${items.length}</p></div>
-   <div class="segs" aria-hidden="true">${segs}</div><h2 class="qtext">${esc(it.t)}</h2>${body}
+   <div class="segs" aria-hidden="true">${segs}</div><h2 class="qtext">${esc(gx(it.t))}</h2>${body}
    <div class="actions">${i>0?'<button class="btn ghost" data-act="prev">Indietro</button>':''}<button class="btn ghost" data-act="back">Esci</button></div></section>`;
 }
 function ringSvg(pct){
@@ -895,11 +918,11 @@ function resHTML(){
   const src=srcOf(S.view.src), m=me(), o=other(m); let cmp=0, same=0; const diff=[];
   const rows=src.items.map(it=>{
     const mine=ans(m,it.key), th=ans(o,it.key), show=v=>shw(it,v);
-    if(!done(mine))return `<article class="card qrow"><p class="qt">${esc(it.t)}</p><p class="note">Rispondi per vedere cosa ha scelto ${esc(nm(o))}.</p></article>`;
+    if(!done(mine))return `<article class="card qrow"><p class="qt">${esc(gx(it.t))}</p><p class="note">Rispondi per vedere cosa ha scelto ${esc(nm(o))}.</p></article>`;
     const both=done(th); let eq=false, cu=false;
     if(both&&it.o){cu=isCust(it,mine)||isCust(it,th); if(!cu){cmp++;eq=mine===th;if(eq)same++}; if(!eq)diff.push(it)}
     const a=m==='A'?mine:th, b=m==='B'?mine:th;
-    return `<article class="card qrow"><p class="qt">${esc(it.t)}</p><div class="pairs">${done(a)?pill('A',show(a)):pill('A','',true)}${done(b)?pill('B',show(b)):pill('B','',true)}</div>
+    return `<article class="card qrow"><p class="qt">${esc(gx(it.t))}</p><div class="pairs">${done(a)?pill('A',show(a)):pill('A','',true)}${done(b)?pill('B',show(b)):pill('B','',true)}</div>
       ${both&&it.o?`<p class="verdict ${eq?'eq':'ne'}">${cu?'Risposta scritta da voi':eq?heartSvg()+'Uguale':xSvg+'Diverso'}</p>`:''}</article>`;
   }).join('');
   const pct=cmp?same/cmp:0, n=src.items.length, pa=prog(src.items,'A'), pb=prog(src.items,'B');
@@ -908,7 +931,7 @@ function resHTML(){
   const doneO=pb===n&&pa===n;
   const pass=S.mode==='local'&&prog(src.items,o)<n?`<button class="btn" data-act="pass">Passa il telefono a ${esc(nm(o))}</button>`:'';
   const status=doneO?'Completato da entrambi.':`${esc(nm('A'))} ${pa}/${n} · ${esc(nm('B'))} ${pb}/${n}`;
-  const disc=diff.length?`<section class="card"><p class="eyebrow">Da discutere</p><ul class="dlist">${diff.map(it=>`<li>${esc(it.t)}</li>`).join('')}</ul></section>`:'';
+  const disc=diff.length?`<section class="card"><p class="eyebrow">Da discutere</p><ul class="dlist">${diff.map(it=>`<li>${esc(gx(it.t))}</li>`).join('')}</ul></section>`:'';
   return headerHTML()+`<h2 class="h2">${esc(src.title)}</h2><section class="card"><p class="eyebrow">Resoconto per entrambi</p>${sum}<p class="note" style="text-align:center;margin-top:6px">${status}</p><div class="actions" style="justify-content:center">${pass}<button class="btn ghost" data-act="back">Torna ai quiz</button></div></section>${disc}${prog(src.items,m)>0?chatHTML(S.view.src,'Discussione sul quiz'):''}${rows}`;
 }
 function addqHTML(){
@@ -1141,6 +1164,7 @@ function noiHTML(){
    <label for="f-bd">Il tuo compleanno (per le domande speciali)</label><input id="f-bd" type="date" value="${esc(a.bd?'2000-'+a.bd:'')}">
    <datalist id="cities">${CITIES.map(c=>`<option value="${esc(c[0])}"></option>`).join('')}</datalist>
    <p class="note">${loc&&loc.at?'La tua posizione si aggiorna ogni volta che apri l\'app (ultima: '+esc(ago(loc.at))+').':'Posizione non ancora rilevata: consenti l\'accesso alla posizione quando il telefono lo chiede.'} Viene salvata in modo approssimato, mai l'indirizzo.</p>
+   <div class="optrow"><p class="eyebrow">Come ti scrivono le domande</p><div class="chips"><button type="button" class="chip ${gOf(m)==='m'?'on':''}" data-act="setgender" data-g="m">Al maschile</button><button type="button" class="chip ${gOf(m)==='f'?'on':''}" data-act="setgender" data-g="f">Al femminile</button></div><p class="note">Serve per forme come «stanco» o «stanca». Lo vede solo chi usa l'app con te.</p></div>
    <p class="err" id="err" role="alert" hidden></p>
    <button class="btn" type="submit">Salva</button>
    <button class="btn ghost" type="button" data-act="geo" style="margin-top:8px">Aggiorna la posizione adesso</button>
@@ -1158,7 +1182,7 @@ const ICONS={
 const LABELS={home:'Home',quiz:'Quiz',ricordi:'Ricordi',giochi:'Giochi',noi:'Noi'};
 const navHTML=()=>`<div class="in">${Object.keys(ICONS).map(k=>`<button data-tab="${k}" aria-label="${LABELS[k]}" ${S.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg></button>`).join('')}</div>`;
 
-const G=window.DUG({S:S,esc:esc,nm:nm,me:me,other:other,heartSvg:heartSvg,toast:toast,rq:rq,render:render,
+const G=window.DUG({S:S,esc:esc,gx:gx,nm:nm,me:me,other:other,heartSvg:heartSvg,toast:toast,rq:rq,render:render,
   hotOn:hotOn,events:()=>S.events.filter(e=>!e.hot||hotOn()),dnum:dnum,todayStr:todayStr,safeImg:safeImg,
   setActive:m=>{if(S.mode==='local'){S.active=m;lsSave()}rq()},
   saveGame:g=>{
@@ -1301,6 +1325,7 @@ document.addEventListener('click',e=>{
   case 'storypick': pickFile('story',false);break;
   case 'addstory': if(!S.canWrite){toast(RO);break} pickFile('story',false);break;
   case 'avpick': pickFile('avatar',false);break;
+  case 'setgender': if(saveMine({g:t.dataset.g==='f'?'f':'m'})){toast(t.dataset.g==='f'?'Ti scriveremo al femminile':'Ti scriveremo al maschile');render(true)}break;
   case 'qphoto': S.pickCtx={k:t.dataset.key,run:t.dataset.run==='1'};pickFile('qans',false);break;
   case 'chatph': S.pickCtx={th:t.dataset.th};pickFile('chatph',false);break;
   case 'mission': S.view={t:'mission'};S.msn=null;S.tab='home';go();break;

@@ -790,7 +790,7 @@ function obvHTML(g){
      :`<p class="note" style="text-align:center">${esc(nm(g.turn))} sta scegliendo tra obbligo e verità…</p>`;
   }else{
     const c=g.card||{k:'v',t:''};
-    body=`<div class="card" style="text-align:center;border:2px solid var(--btn)"><p class="eyebrow">${c.k==='o'?'Obbligo':'Verità'} per ${esc(nm(g.turn))}</p><h3 class="qtext" style="margin-top:8px">${esc(c.t)}</h3></div>
+    body=`<div class="card" style="text-align:center;border:2px solid var(--btn)"><p class="eyebrow">${c.k==='o'?'Obbligo':'Verità'} per ${esc(nm(g.turn))}</p><h3 class="qtext" style="margin-top:8px">${esc(DU.gx(c.t,g.turn))}</h3></div>
      ${mine?`<div class="actions" style="justify-content:center"><button class="btn" data-act="g-obvdone">Fatto ✓</button><button class="btn ghost" data-act="g-obvskip">Passo</button></div>`:`<p class="note" style="text-align:center">Aspettiamo che ${esc(nm(g.turn))} risponda o lo faccia.</p>`}`;
   }
   return `${statusLine(g)}<p class="note">Livello: <b>${lv}</b> · carte giocate: ${g.n||0}. Si può sempre dire "passo": niente è obbligatorio davvero.</p>${body}
@@ -809,7 +809,7 @@ function dadiDone(){
 function dadiHTML(g){
   const mine=actorOK(g), lv=['','Sensuale','Spinto','Senza limiti'][g.lv||2], r=g.roll;
   const dice=r?`<div class="card" style="text-align:center;border:2px solid var(--btn)"><p class="eyebrow">${esc(nm(r.by))} lo fa a ${esc(nm(other(r.by)))}</p>
-    <h3 class="qtext" style="margin-top:8px">${esc(r.a)} ${esc(r.z)} ${esc(r.h)}</h3></div>`:'';
+    <h3 class="qtext" style="margin-top:8px">${esc(DU.gx(r.a+' '+r.z+' '+r.h,r.by))}</h3></div>`:'';
   const act=mine?(r?`<div class="actions" style="justify-content:center"><button class="btn" data-act="g-dadidone">Fatto ✓</button><button class="btn ghost" data-act="g-dadiroll">Tira ancora</button></div>`
      :`<div class="actions" style="justify-content:center"><button class="btn" data-act="g-dadiroll">🎲 Tira i dadi</button></div>`)
     :`<p class="note" style="text-align:center">${r?'Tocca a '+esc(nm(other(g.turn)))+' lasciarsi andare…':esc(nm(g.turn))+' sta per tirare i dadi.'}</p>`;
