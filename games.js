@@ -15,15 +15,15 @@ const GAMES=[
  {id:'tris',t:'Tris',b:'Il classico tre in fila, anche in versione grande 5×5.',hidden:false,ico:'⭕',gr:'#11998e,#38ef7d'},
  {id:'mem',t:'Memory a coppie',b:'Gira le carte e trova le coppie: ogni coppia ti dà un altro turno.',hidden:false,ico:'🃏',gr:'#f7971e,#ffd200'},
  {id:'golf',t:'Mini golf',b:'Campi casuali, ostacoli e bumper. Lo stesso percorso per tutti e due.',hidden:false,ico:'⛳',gr:'#56ab2f,#a8e063'},
- {id:'obv',t:'Obbligo o verità',b:'Una carta alla volta: rispondi senza filtri o fai quello che dice. Tre livelli, fino al molto esplicito.',hidden:false,ico:'🔥',gr:'#e52d27,#b31217',hotOnly:true},
- {id:'dadi',t:'Dadi del desiderio',b:'Tira i dadi: azione, punto del corpo e modo. Si fa davvero, a turno. Tre livelli.',hidden:false,ico:'🎲',gr:'#8e2de2,#4a00e0',hotOnly:true}];
+ {id:'flap',t:'Flappy cuore',b:'Tocca per battere le ali e passa tra i tubi senza toccarli. Stessi tubi per tutti e due: vince chi ne supera di più.',hidden:false,ico:'🐦',gr:'#4facfe,#00c6fb'},
+ {id:'dash',t:'Cuore Dash',b:'Il cuore corre da solo: tocca per saltare spine, blocchi e buche. Stesso percorso per tutti e due: vince chi va più lontano.',hidden:false,ico:'🔷',gr:'#7b61ff,#e0457a'}];
 const TN={rom:'Romantico',hot:'Hot',ric:'I nostri ricordi'};
 const ginfo=id=>GAMES.find(x=>x.id===id);
 const actorOK=g=>S.mode==='local'||g.turn===me();
 /* La partita aspetta me? (serve all'elenco partite e alle notifiche) */
 function myTurn(g,m){
   if(!g||g.w)return false;
-  if(g.type==='arch'||g.type==='golf')return !!g.s&&g.s[m]===null;
+  if(g.type==='arch'||g.type==='golf'||g.type==='flap'||g.type==='dash')return !!g.s&&g.s[m]===null;
   if(g.type==='bs'&&g.phase==='place')return !(g.ready&&g.ready[m]);
   if(g.type==='ic'&&g.phase==='pick')return !g.pick||g.pick[m]===null||g.pick[m]===undefined;
   return g.turn===m;
@@ -47,35 +47,40 @@ function startDaily(date,id){
 /* ---------- Impostazioni di ogni gioco ---------- */
 const OPTS={
  c4:[
-  {k:'size',t:'Griglia',v:[['7x6','Classica 7×6'],['9x7','Grande 9×7']],d:0},
+  {k:'size',t:'Livello · griglia',v:[['7x6','Facile · classica 7×6'],['9x7','Difficile · grande 9×7'],['11x9','Esperto · gigante 11×9']],d:0},
   {k:'pop',t:'Pop out',v:[[0,'No'],[1,'Sì']],d:0,h:'Con Pop out puoi togliere un tuo disco dalla riga in basso: quelli sopra scendono.'}],
  bs:[
   {k:'fleet',t:'Flotta',v:[['s','Rapida · 6×6, 3 navi'],['m','Media · 8×8, 5 navi'],['l','Classica · 10×10, 5 navi']],d:1},
   {k:'bonus',t:'Colpo bonus',v:[[1,'Sì: se colpisci, rigiochi'],[0,'No: si alterna sempre']],d:0},
   {k:'touch',t:'Navi vicine',v:[[1,'Possono toccarsi'],[0,'Devono stare distanti']],d:0}],
  arch:[
-  {k:'diff',t:'Difficoltà',v:[[1,'Facile'],[2,'Normale'],[3,'Pro: raffiche e bersaglio piccolo']],d:1,h:'Ogni freccia il bersaglio si allontana: più piccolo, più veloce, vento più forte.'},
+  {k:'diff',t:'Livello',v:[[1,'Facile'],[2,'Normale'],[3,'Difficile: raffiche e bersaglio piccolo'],[4,'Esperto: tremolio, vento e bersaglio minuscolo']],d:1,h:'Ogni freccia il bersaglio si allontana: più piccolo, più veloce, vento più forte.'},
   {k:'n',t:'Frecce a testa',v:[[3,'3'],[5,'5'],[10,'10']],d:1},
   {k:'wind',t:'Vento',v:[[0,'Assente'],[1,'Leggero'],[2,'Forte']],d:1},
   {k:'mov',t:'Bersaglio',v:[[0,'Fermo'],[1,'Mobile']],d:0}],
  q20:[
   {k:'n',t:'Quante domande',v:[[10,'10'],[20,'20 (classico)'],[30,'30']],d:1},
   {k:'cat',t:'Cosa si deve indovinare',v:[['any','Qualsiasi cosa'],['animale','Un animale'],['oggetto','Un oggetto'],['persona','Una persona'],['luogo','Un luogo'],['cibo','Un cibo']],d:0,h:'Chi pensa sceglie un segreto di questo tipo e lo scrive: l\'altro lo vede solo alla fine.'}],
- obv:[
-  {k:'lv',t:'Livello',v:[[1,'Piccante'],[2,'Esplicito'],[3,'Molto esplicito']],d:1,h:'Le carte arrivano fino al livello scelto. Si può sempre dire "passo": nessun obbligo, mai.'}],
  tris:[
-  {k:'sz',t:'Griglia',v:[[3,'Classica 3×3 (tre in fila)'],[5,'Grande 5×5 (quattro in fila)']],d:0}],
+  {k:'sz',t:'Livello · griglia',v:[[3,'Facile · 3×3, tre in fila'],[5,'Difficile · 5×5, quattro in fila'],[7,'Esperto · 7×7, cinque in fila']],d:0}],
  mem:[
-  {k:'pairs',t:'Coppie',v:[[6,'6 (veloce)'],[8,'8'],[10,'10 (lunga)']],d:1}],
+  {k:'pairs',t:'Livello · coppie',v:[[6,'Facile · 6 coppie'],[8,'Normale · 8'],[10,'Difficile · 10'],[12,'Esperto · 12']],d:1},
+  {k:'mix',t:'Rimescolare',v:[[0,'No'],[1,'Sì: dopo ogni errore le carte rimaste cambiano posto']],d:0}],
+ flap:[
+  {k:'diff',t:'Livello',v:[[1,'Facile: varco largo'],[2,'Normale'],[3,'Difficile: varco stretto'],[4,'Esperto: stretto e veloce']],d:1},
+  {k:'tries',t:'Tentativi a testa',v:[[1,'1 solo'],[3,'3 (conta il migliore)'],[5,'5 (conta il migliore)']],d:1}],
+ dash:[
+  {k:'diff',t:'Livello',v:[[1,'Facile: lento e pochi ostacoli'],[2,'Normale'],[3,'Difficile: veloce, buche e spine doppie'],[4,'Esperto: velocissimo e fitto']],d:1},
+  {k:'tries',t:'Tentativi a testa',v:[[1,'1 solo'],[3,'3 (conta il migliore)'],[5,'5 (conta il migliore)']],d:1}],
  golf:[
+  {k:'diff',t:'Livello',v:[[1,'Facile'],[2,'Normale'],[3,'Difficile'],[4,'Esperto']],d:1,h:'Più sale il livello, più la buca è piccola e più ostacoli ci sono.'},
   {k:'holes',t:'Numero di buche',v:[[3,'3'],[6,'6'],[9,'9']],d:0},
   {k:'bump',t:'Bumper',v:[[1,'Sì'],[0,'No']],d:0},
   {k:'size',t:'Campo',v:[['r','Casuale (anche grande)'],['s','Piccolo']],d:0}]
 };
 const defCfg=id=>{const c={};(OPTS[id]||[]).forEach(o=>{c[o.k]=o.v[o.d][0]});return c};
 const FLEETS={s:{size:6,lens:[3,2,2]},m:{size:8,lens:[4,3,3,2,2]},l:{size:10,lens:[5,4,3,3,2]}};
-OPTS.dadi=[{k:'lv',t:'Livello',v:[[1,'Sensuale'],[2,'Spinto'],[3,'Senza limiti']],d:1,h:'Il dado dice cosa fare, dove e come. Chi tira lo fa all\'altro/a. Si può sempre dire stop.'}];
-const NAMEOF={obv:'Obbligo o verità',dadi:'Dadi del desiderio',q20:'20 domande',tris:'Tris',mem:'Memory',c4:'Forza 4',bs:'Battaglia navale',arch:'Tiro con l\'arco',golf:'Mini golf'};
+const NAMEOF={q20:'20 domande',tris:'Tris',mem:'Memory',c4:'Forza 4',bs:'Battaglia navale',arch:'Tiro con l\'arco',golf:'Mini golf'};
 
 function finish(n,w){
   n.w=w; n.peg=pick(D.PEGNI[n.th==='hot'?'hot':'rom']);
@@ -120,14 +125,12 @@ function startGame(id,th,cfg,x){
   else if(id==='q20'){g.setter=pick(['A','B']);g.guesser=other(g.setter);g.phase='set';g.turn=g.setter;g.secret=null;g.log=[]}
   else if(id==='tris'){const N=+(g.cfg.sz||3);g.b=Array(N*N).fill('');g.mv=0}
   else if(id==='mem'){
-    const E=th==='hot'?['🍆','🍑','💦','🔥','👅','🍒','😈','🌶️','💋','🍌']:['🌹','🎈','🍓','🌙','🐱','🎧','☕','🍀','🦋','🎁'];
+    const E=['🌹','🎈','🍓','🌙','🐱','🎧','☕','🍀','🦋','🎁','🍉','🌻'];
     const n=+(g.cfg.pairs||8), c=E.slice(0,n).concat(E.slice(0,n));
     for(let i=c.length-1;i>0;i--){const j=rnd(i+1);[c[i],c[j]]=[c[j],c[i]]}
     g.cards=c;g.open=[];g.mo=Array(c.length).fill('');g.pc={A:0,B:0}
   }
-  else if(id==='arch'||id==='golf'){g.s={A:null,B:null};g.seed=1+rnd(1e9);delete g.turn}
-  else if(id==='obv'){g.lv=+(g.cfg.lv||2);g.phase='choose';g.card=null;g.n=0;g.seen=[]}
-  else if(id==='dadi'){g.lv=+(g.cfg.lv||2);g.roll=null;g.n=0}
+  else if(id==='arch'||id==='golf'||id==='flap'||id==='dash'){g.s={A:null,B:null};g.seed=1+rnd(1e9);delete g.turn}
   S.gset=null;
   DU.saveGame(g);
   if(S.mode==='local'&&g.turn&&!ginfo(id).hidden)DU.setActive(g.turn);
@@ -250,7 +253,7 @@ function ttWin(b,N,K,w){
 }
 function ttTap(i){
   const g=S.game; if(!g||g.w||!actorOK(g)||g.b[i])return;
-  const N=+(g.cfg.sz||3), K=N===3?3:4, n=clone(g), who=g.turn;
+  const N=+(g.cfg.sz||3), K=N===3?3:N===5?4:5, n=clone(g), who=g.turn;
   n.b[i]=who; n.mv=(g.mv||0)+1; n.last=i;
   const wl=ttWin(n.b,N,K,who);
   if(wl.length){n.line=wl;finish(n,who)} else if(n.b.every(x=>x)){finish(n,'D')} else n.turn=other(who);
@@ -262,7 +265,7 @@ function ttHTML(g){
   const N=+(g.cfg.sz||3), line=new Set(g.line||[]), pv=getPend(g);
   const cells=g.b.map((v,i)=>`<button class="tcell ${v||(pv===i?g.turn+' gh':'')} ${line.has(i)?'w':''} ${g.last===i?'new':''}" data-act="g-tt" data-i="${i}" ${v||g.w?'disabled':''} aria-label="Casella ${i+1}">${v?ttSym(g,v):(pv===i?ttSym(g,g.turn):'')}</button>`).join('');
   return `${statusLine(g)}<div class="tris ${g.th}" style="--N:${N}">${cells}</div>${sendBtn(g,pv!==null)}
-   <p class="note"><span class="dot"></span> ${esc(nm('A'))} ${ttSym(g,'A')} · <span class="dot B"></span> ${esc(nm('B'))} ${ttSym(g,'B')}</p>${endBlock(g,g.line?(N===3?'Tre in fila!':'Quattro in fila!'):'')}`;
+   <p class="note"><span class="dot"></span> ${esc(nm('A'))} ${ttSym(g,'A')} · <span class="dot B"></span> ${esc(nm('B'))} ${ttSym(g,'B')}</p>${endBlock(g,g.line?(N===3?'Tre in fila!':N===5?'Quattro in fila!':'Cinque in fila!'):'')}`;
 }
 
 /* ---------- Memory ---------- */
@@ -282,6 +285,11 @@ function memTap(i){
 function memNext(){
   const g=S.game; if(!g||g.w||!actorOK(g)||g.open.length<2)return;
   const n=clone(g); n.open=[]; n.turn=other(g.turn); n.lastm=null;
+  if(+(g.cfg&&g.cfg.mix)){ /* livello esperto: le carte ancora coperte cambiano posto */
+    const idx=n.mo.map((o,i)=>o?-1:i).filter(i=>i>=0), vals=idx.map(i=>n.cards[i]);
+    for(let i=vals.length-1;i>0;i--){const j=rnd(i+1);[vals[i],vals[j]]=[vals[j],vals[i]]}
+    idx.forEach((k,x)=>{n.cards[k]=vals[x]});
+  }
   DU.saveGame(n);
   if(S.mode==='local')DU.setActive(n.turn);
 }
@@ -500,7 +508,7 @@ function endPlay(score){
     n.s[p.slot]=score;
     if(n.s.A!==null&&n.s.B!==null){
       const a=n.s.A,b=n.s.B;
-      finish(n,a===b?'D':(p.g==='arch'?(a>b?'A':'B'):(a<b?'A':'B')));
+      finish(n,a===b?'D':(p.g==='golf'?(a<b?'A':'B'):(a>b?'A':'B')));
     }
     return n;
   },p.id);
@@ -620,8 +628,8 @@ function golfGen(seed,i,cfg){
   let W=320,H=440;
   if(cfg.size!=='s'){W=Math.round(320+R()*150);H=Math.round(440+R()*280)}
   const tee=[Math.round(m+30+R()*(W-2*m-60)),H-m-34], hole=[Math.round(m+30+R()*(W-2*m-60)),m+48];
-  const walls=[], circs=[];
-  const nW=2+Math.floor(R()*3)+Math.floor(W*H/80000), nC=bump?2+Math.floor(R()*3)+Math.floor(W*H/120000):0;
+  const walls=[], circs=[], dif=cfg.diff||2;
+  const nW=Math.max(1,2+Math.floor(R()*3)+Math.floor(W*H/80000)+(dif-2)), nC=bump?Math.max(1,2+Math.floor(R()*3)+Math.floor(W*H/120000)+(dif-2)):0;
   const far=(x,y,rr)=>Math.hypot(x-tee[0],y-tee[1])>rr+58&&Math.hypot(x-hole[0],y-hole[1])>rr+58;
   const clearOf=(r)=>{
     const pad=34, e=[r[0]-pad,r[1]-pad,r[2]+2*pad,r[3]+2*pad];
@@ -643,7 +651,7 @@ function golfGen(seed,i,cfg){
   return {W:W,H:H,b:tee,h:hole,w:walls,c:circs,par:par};
 }
 function mountGolf(cv,th,cfg,seed){
-  const hot=th==='hot', HN=cfg.holes||3, MAXS=10, hr=12;
+  const hot=th==='hot', HN=cfg.holes||3, MAXS=10, hr=[15,12,10,8][(cfg.diff||2)-1]||12;
   const holes=[...Array(HN).keys()].map(i=>golfGen(seed||1,i,cfg));
   let ctx=null, W=320, H=440, r=7, hi=0, strokes=0, total=0, ball={x:0,y:0}, v={x:0,y:0}, moving=false, drag=null, msg='', done=false, lock=false, last=performance.now(), acc=0;
   const hole=()=>holes[hi];
@@ -764,59 +772,6 @@ function mountGolf(cv,th,cfg,seed){
 }
 
 
-/* ---------- Obbligo o verità (solo hot) ---------- */
-function obvDraw(g,kind){
-  const L=kind==='o'?D.OBV.d:D.OBV.t, pool=[];
-  L.forEach((x,i)=>{if(x[0]<=g.lv&&(g.seen||[]).indexOf(kind+i)<0)pool.push(i)});
-  const all=pool.length?pool:L.map((x,i)=>i).filter(i=>L[i][0]<=g.lv), i=pick(all);
-  return {k:kind,t:L[i][1],i:kind+i};
-}
-function obvPick(kind){
-  const g=S.game; if(!g||g.type!=='obv'||g.phase!=='choose'||!actorOK(g))return;
-  const n=clone(g), c=obvDraw(g,kind); n.card=c; n.phase='do'; n.seen=(g.seen||[]).concat(c.i).slice(-80);
-  DU.saveGame(n);
-}
-function obvNext(skip){
-  const g=S.game; if(!g||g.type!=='obv'||g.phase!=='do'||!actorOK(g))return;
-  const n=clone(g); n.n=(g.n||0)+(skip?0:1); n.phase='choose'; n.card=null; n.turn=other(g.turn);
-  DU.saveGame(n); if(S.mode==='local')DU.setActive(n.turn);
-}
-function obvHTML(g){
-  const mine=actorOK(g), lv=['','Piccante','Esplicito','Molto esplicito'][g.lv||2];
-  let body;
-  if(g.phase==='choose'){
-    body=mine?`<p class="lead" style="font-size:18px;text-align:center">Scegli: obbligo o verità?</p>
-     <div class="actions" style="justify-content:center"><button class="btn" data-act="g-obv" data-k="v">Verità</button><button class="btn" data-act="g-obv" data-k="o">Obbligo</button></div>`
-     :`<p class="note" style="text-align:center">${esc(nm(g.turn))} sta scegliendo tra obbligo e verità…</p>`;
-  }else{
-    const c=g.card||{k:'v',t:''};
-    body=`<div class="card" style="text-align:center;border:2px solid var(--btn)"><p class="eyebrow">${c.k==='o'?'Obbligo':'Verità'} per ${esc(nm(g.turn))}</p><h3 class="qtext" style="margin-top:8px">${esc(DU.gx(c.t,g.turn))}</h3></div>
-     ${mine?`<div class="actions" style="justify-content:center"><button class="btn" data-act="g-obvdone">Fatto ✓</button><button class="btn ghost" data-act="g-obvskip">Passo</button></div>`:`<p class="note" style="text-align:center">Aspettiamo che ${esc(nm(g.turn))} risponda o lo faccia.</p>`}`;
-  }
-  return `${statusLine(g)}<p class="note">Livello: <b>${lv}</b> · carte giocate: ${g.n||0}. Si può sempre dire "passo": niente è obbligatorio davvero.</p>${body}
-   <div class="actions"><button class="btn ghost sm" data-act="g-close">Chiudi la partita</button></div>`;
-}
-/* ---------- Dadi del desiderio (solo hot) ---------- */
-function dadiRoll(){
-  const g=S.game; if(!g||g.type!=='dadi'||!actorOK(g))return;
-  const f=L=>{const a=L.filter(x=>x[0]<=g.lv);const w=a.filter(x=>x[0]===g.lv).concat(a);return pick(w)[1]};
-  const n=clone(g); n.roll={a:f(D.DADI.act),z:f(D.DADI.zone),h:f(D.DADI.how),by:g.turn}; DU.saveGame(n);
-}
-function dadiDone(){
-  const g=S.game; if(!g||g.type!=='dadi'||!actorOK(g))return;
-  const n=clone(g); n.n=(g.n||0)+1; n.roll=null; n.turn=other(g.turn); DU.saveGame(n); if(S.mode==='local')DU.setActive(n.turn);
-}
-function dadiHTML(g){
-  const mine=actorOK(g), lv=['','Sensuale','Spinto','Senza limiti'][g.lv||2], r=g.roll;
-  const dice=r?`<div class="card" style="text-align:center;border:2px solid var(--btn)"><p class="eyebrow">${esc(nm(r.by))} lo fa a ${esc(nm(other(r.by)))}</p>
-    <h3 class="qtext" style="margin-top:8px">${esc(DU.gx(r.a+' '+r.z+' '+r.h,r.by))}</h3></div>`:'';
-  const act=mine?(r?`<div class="actions" style="justify-content:center"><button class="btn" data-act="g-dadidone">Fatto ✓</button><button class="btn ghost" data-act="g-dadiroll">Tira ancora</button></div>`
-     :`<div class="actions" style="justify-content:center"><button class="btn" data-act="g-dadiroll">🎲 Tira i dadi</button></div>`)
-    :`<p class="note" style="text-align:center">${r?'Tocca a '+esc(nm(other(g.turn)))+' lasciarsi andare…':esc(nm(g.turn))+' sta per tirare i dadi.'}</p>`;
-  return `${statusLine(g)}<p class="note">Livello: <b>${lv}</b> · turni fatti: ${g.n||0}. Chi tira è attivo, l'altro/a si gode. "Stop" ferma tutto, sempre.</p>${dice}${act}
-   <div class="actions"><button class="btn ghost sm" data-act="g-close">Chiudi la partita</button></div>`;
-}
-
 /* ---------- Elenco partite ---------- */
 function listHTML(){
   const gs=Object.values(DU.games()).filter(g=>ginfo(g.type)).sort((a,b)=>(b.at||0)-(a.at||0));
@@ -839,6 +794,181 @@ function dailyHTML2(){
   return `<section class="card"><h3 style="font-size:20px">Sfida del giorno</h3><p class="note" style="margin:2px 0 8px">Due giochi con regole scelte a caso, uguali per tutti e due. Cambiano ogni giorno.</p><div class="glist">${rows}</div></section>`;
 }
 
+/* ---------- Flappy cuore ---------- */
+function mountFlap(cv,cfg,seed){
+  const W=320,H=480, ctx=fitCanvas(cv,W,H), dif=Math.max(1,Math.min(4,+cfg.diff||2)), TRIES=+(cfg.tries||3);
+  const GAP=[156,136,118,104][dif-1], SP=[2.1,2.5,2.9,3.4][dif-1], SPACE=[210,196,184,172][dif-1], PW=54, GR=H-56, X=88, G=.36, FL=-6.5, LO=64;
+  let tries=0, best=0, run=null, over=false, last=performance.now(), acc=0, T=0, msg='', parts=[];
+  function addPipe(){
+    const prev=run.pipes.length?run.pipes[run.pipes.length-1]:null, hi=GR-LO-GAP;
+    let gy=LO+run.rng()*(hi-LO); if(prev)gy=Math.max(LO,Math.min(hi,Math.max(prev.gy-110,Math.min(prev.gy+110,gy))));
+    run.pipes.push({x:(prev?prev.x:W+10-SPACE)+SPACE,gy:gy,pass:false});
+  }
+  function newRun(){
+    run={y:H*.42,v:0,pipes:[],score:0,state:'wait',rng:mulberry((seed||1)*13+7+tries*0)};
+    for(let i=0;i<6;i++)addPipe(); msg=''; parts=[];
+  }
+  newRun();
+  const flap=()=>{ if(over||run.state==='dead')return; if(run.state==='wait')run.state='play'; run.v=FL; try{navigator.vibrate&&navigator.vibrate(6)}catch(e){} };
+  cv.addEventListener('pointerdown',e=>{e.preventDefault();try{cv.setPointerCapture(e.pointerId)}catch(x){}flap()});
+  function die(){
+    if(run.state==='dead')return;
+    run.state='dead'; best=Math.max(best,run.score); tries++;
+    for(let i=0;i<14;i++)parts.push({x:X,y:run.y,vx:(Math.random()-.5)*5,vy:(Math.random()-.8)*5,l:40});
+    try{navigator.vibrate&&navigator.vibrate([20,40,20])}catch(e){}
+    if(tries>=TRIES){over=true;msg='Migliore: '+best;setTimeout(()=>{if(cv.isConnected)endPlay(best)},1100)}
+    else{msg='Ops! '+run.score+(run.score===1?' tubo':' tubi');setTimeout(()=>{if(cv.isConnected&&!over)newRun()},900)}
+  }
+  function step(){
+    T++;
+    parts.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.vy+=.25;q.l--}); parts=parts.filter(q=>q.l>0);
+    if(run.state==='wait'){run.y=H*.42+Math.sin(T/12)*7;return}
+    if(run.state==='dead')return;
+    run.v+=G; run.y+=run.v;
+    run.pipes.forEach(p=>{p.x-=SP});
+    if(run.pipes[0].x+PW<-10){run.pipes.shift();addPipe()}
+    run.pipes.forEach(p=>{
+      if(!p.pass&&p.x+PW<X-12){p.pass=true;run.score++}
+      if(X+12>p.x&&X-12<p.x+PW&&(run.y-12<p.gy||run.y+12>p.gy+GAP))die();
+    });
+    if(run.state!=='dead'&&(run.y+12>GR||run.y-12<0))die();
+  }
+  function pipeDraw(x,y,h,flip){
+    const g=ctx.createLinearGradient(x,0,x+PW,0); g.addColorStop(0,'#6d3fc9'); g.addColorStop(.5,'#9a6af0'); g.addColorStop(1,'#6d3fc9');
+    ctx.fillStyle=g; ctx.fillRect(x,y,PW,h);
+    const cy=flip?y+h-18:y; ctx.fillStyle='#b48cf7'; ctx.fillRect(x-4,cy,PW+8,18); ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=2; ctx.strokeRect(x-4,cy,PW+8,18);
+  }
+  function draw(){
+    const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#7fd3ff'); g.addColorStop(1,'#ffe3ef'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='rgba(255,255,255,.75)'; for(let i=0;i<4;i++){const cx=((i*110-T*.4*(1+i*.2))%(W+120)+W+120)%(W+120)-40, cy=70+i*74;ctx.beginPath();ctx.arc(cx,cy,18,0,7);ctx.arc(cx+20,cy+4,22,0,7);ctx.arc(cx+42,cy,16,0,7);ctx.fill()}
+    run.pipes.forEach(p=>{pipeDraw(p.x,0,p.gy,true);pipeDraw(p.x,p.gy+GAP,GR-(p.gy+GAP),false)});
+    ctx.fillStyle='#8be0a3'; ctx.fillRect(0,GR,W,H-GR); ctx.fillStyle='#5cc27c'; for(let x=-((T*SP)%24);x<W;x+=24)ctx.fillRect(x,GR,12,6);
+    parts.forEach(q=>{ctx.fillStyle='rgba(224,69,122,'+(q.l/40)+')';heartPath(ctx,q.x,q.y,9);ctx.fill()});
+    if(run.state!=='dead'){
+      ctx.save(); ctx.translate(X,run.y); ctx.rotate(Math.max(-.5,Math.min(.9,run.v*.09)));
+      ctx.fillStyle='#E0457A'; ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; heartPath(ctx,0,-14,30); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(-12,2,9,5,-.4+Math.sin(T/3)*.4,0,7); ctx.fill(); ctx.restore();
+    }
+    ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.strokeStyle='#3B1630'; ctx.lineWidth=5; ctx.font='800 44px sans-serif';
+    ctx.strokeText(run.score,W/2,70); ctx.fillText(run.score,W/2,70);
+    ctx.font='700 13px sans-serif'; ctx.lineWidth=3; const hud='Tentativo '+Math.min(tries+(run.state==='dead'?0:1),TRIES)+'/'+TRIES+' · migliore '+best;
+    ctx.strokeText(hud,W/2,92); ctx.fillText(hud,W/2,92);
+    if(run.state==='wait'&&!over){ctx.font='800 20px sans-serif';ctx.strokeText('Tocca per volare',W/2,H*.62);ctx.fillText('Tocca per volare',W/2,H*.62)}
+    if(msg){ctx.font='800 26px sans-serif';ctx.lineWidth=5;ctx.strokeText(msg,W/2,H/2);ctx.fillText(msg,W/2,H/2)}
+  }
+  cv.__flap={state:()=>({y:run.y,v:run.v,s:run.state,score:run.score,over:over,pipes:run.pipes.map(p=>({x:p.x,gy:p.gy})),GAP:GAP,X:X})};
+  function frame(now){
+    if(!cv.isConnected)return;
+    acc+=Math.min(.1,(now-last)/1000); last=now;
+    while(acc>=1/60){acc-=1/60;step()}
+    draw(); requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- Cuore Dash ---------- */
+function mountDash(cv,cfg,seed){
+  const W=320,H=440, ctx=fitCanvas(cv,W,H), dif=Math.max(1,Math.min(4,+cfg.diff||2)), TRIES=+(cfg.tries||3);
+  const SPD=[3.9,4.6,5.3,6.1][dif-1], GY=H-96, PX=76, S=28, G=.62, J=-11, JL=SPD*2*Math.abs(J)/G;
+  let tries=0, best=0, run=null, over=false, last=performance.now(), acc=0, T=0, msg='', hold=false, buf=0, parts=[];
+  function gen(){
+    const r=run, rng=r.rng;
+    while(r.next<r.dist+W+500){
+      const x=r.next, roll=rng();
+      let o;
+      const pPit=dif>=3?.16:dif===2?.1:0, pBlk=.3, maxN=dif>=3?3:2;
+      if(roll<pPit)o={t:'pit',x:x,w:Math.round(62+rng()*(dif>=4?34:24))};
+      else if(roll<pPit+pBlk){const k=1+Math.floor(rng()*2), hh=rng()<.5?S:S*2;o={t:'blk',x:x,w:S*k,h:hh}}
+      else o={t:'spk',x:x,w:S*(1+Math.floor(rng()*maxN)),n:0};
+      if(o.t==='spk')o.n=o.w/S;
+      r.obs.push(o);
+      r.next=x+o.w+JL*(dif===1?1.25:dif===2?1.05:.95)+50+rng()*(dif===1?160:dif===2?120:90);
+    }
+  }
+  function newRun(){
+    run={dist:0,y:GY-S,v:0,on:true,rot:0,state:'wait',obs:[],next:520,rng:mulberry((seed||1)*17+3),speedUp:0}; gen(); msg=''; parts=[];
+  }
+  newRun();
+  const press=()=>{ if(over)return; if(run.state==='wait')run.state='play'; buf=8; };
+  cv.addEventListener('pointerdown',e=>{e.preventDefault();try{cv.setPointerCapture(e.pointerId)}catch(x){}hold=true;press()});
+  const rel=()=>{hold=false};
+  cv.addEventListener('pointerup',rel); cv.addEventListener('pointercancel',rel);
+  let why='';
+  function die(w){
+    if(run.state==='dead')return;
+    why=w||''; run.state='dead'; const m=Math.floor(run.dist/18); best=Math.max(best,m); tries++;
+    for(let i=0;i<16;i++)parts.push({x:PX,y:run.y+S/2,vx:(Math.random()-.5)*7,vy:(Math.random()-1)*7,l:45});
+    try{navigator.vibrate&&navigator.vibrate([20,40,20])}catch(e){}
+    if(tries>=TRIES){over=true;msg='Migliore: '+best+' m';setTimeout(()=>{if(cv.isConnected)endPlay(best)},1100)}
+    else{msg=m+' m';setTimeout(()=>{if(cv.isConnected&&!over)newRun()},900)}
+  }
+  function step(){
+    T++;
+    parts.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.vy+=.35;q.l--}); parts=parts.filter(q=>q.l>0);
+    if(run.state==='wait'){run.y=GY-S;return}
+    if(run.state==='dead')return;
+    const sp=SPD*(1+Math.min(.22,run.dist/70000)); run.dist+=sp; gen();
+    run.obs=run.obs.filter(o=>o.x+o.w>run.dist-120);
+    /* salto: tocco o dito tenuto premuto */
+    if(buf>0)buf--; if(hold)buf=Math.max(buf,2);
+    if(run.on&&buf>0){run.v=J;run.on=false;buf=0}
+    run.v+=G; run.y+=run.v;
+    const x0=run.dist+PX-S/2+3, x1=run.dist+PX+S/2-3, cxw=run.dist+PX;
+    /* pavimento: terra, oppure la cima di un blocco; nelle buche non c'è */
+    let floor=GY, pit=false;
+    run.obs.forEach(o=>{
+      if(o.t==='pit'&&cxw>o.x+4&&cxw<o.x+o.w-4)pit=true;
+      if(o.t==='blk'&&x1>o.x&&x0<o.x+o.w){
+        const top=GY-o.h, bot=run.y+S, prev=bot-run.v;
+        if(prev<=top+10)floor=Math.min(floor,top); /* sopra il blocco: ci si appoggia */
+        else if(bot>top+9)die('blocco'); /* urto di lato */
+      }
+      if(o.t==='spk'&&x1>o.x+5&&x0<o.x+o.w-5&&run.y+S>GY-20)die('spina');
+    });
+    if(run.state==='dead')return;
+    if(pit&&floor===GY){run.on=false; if(run.y>H+40)die('buca'); return}
+    if(run.y+S>=floor){run.y=floor-S;run.v=0;if(!run.on){run.on=true;run.rot=Math.round(run.rot/(Math.PI/2))*(Math.PI/2)}}
+    else run.on=false;
+    if(!run.on)run.rot+=.13;
+  }
+  function draw(){
+    const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#2b1a5a'); g.addColorStop(1,'#a8316a'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='rgba(255,255,255,.09)'; for(let i=0;i<7;i++){const x=((i*64-run.dist*.25)%(W+80)+W+80)%(W+80)-30;heartPath(ctx,x,70+(i%3)*80,36+(i%2)*14);ctx.fill()}
+    const off=run.dist;
+    /* terreno con buche */
+    ctx.fillStyle='#1a0f3c'; ctx.fillRect(0,GY,W,H-GY);
+    run.obs.forEach(o=>{if(o.t==='pit'){ctx.fillStyle=g;ctx.fillRect(o.x-off,GY,o.w,H-GY);ctx.fillStyle='#07030f';ctx.fillRect(o.x-off,GY+6,o.w,H-GY)}});
+    ctx.fillStyle='#ff5c8a'; ctx.fillRect(0,GY,W,4); run.obs.forEach(o=>{if(o.t==='pit')ctx.clearRect(o.x-off,GY,o.w,4)});
+    ctx.fillStyle='rgba(255,255,255,.06)'; for(let x=-((off)%32);x<W;x+=32)ctx.fillRect(x,GY+10,16,H-GY);
+    run.obs.forEach(o=>{
+      const x=o.x-off; if(x>W+40||x+o.w<-40)return;
+      if(o.t==='spk'){ctx.fillStyle='#f6f0ff';ctx.strokeStyle='#e0457a';ctx.lineWidth=2;for(let k=0;k<o.n;k++){ctx.beginPath();ctx.moveTo(x+k*S,GY);ctx.lineTo(x+k*S+S/2,GY-S+2);ctx.lineTo(x+(k+1)*S,GY);ctx.closePath();ctx.fill();ctx.stroke()}}
+      else if(o.t==='blk'){ctx.fillStyle='#6d3fc9';ctx.fillRect(x,GY-o.h,o.w,o.h);ctx.strokeStyle='#cbb2ff';ctx.lineWidth=2;ctx.strokeRect(x+1,GY-o.h+1,o.w-2,o.h-2);for(let k=0;k<o.h/S;k++)for(let j=0;j<o.w/S;j++){ctx.strokeRect(x+j*S+5,GY-o.h+k*S+5,S-10,S-10)}}
+    });
+    parts.forEach(q=>{ctx.fillStyle='rgba(255,92,138,'+(q.l/45)+')';ctx.fillRect(q.x,q.y,7,7)});
+    if(run.state!=='dead'){
+      ctx.save(); ctx.translate(PX,run.y+S/2); ctx.rotate(run.rot);
+      ctx.shadowColor='#ff5c8a'; ctx.shadowBlur=14; ctx.fillStyle='#E0457A'; ctx.fillRect(-S/2,-S/2,S,S); ctx.shadowBlur=0;
+      ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.strokeRect(-S/2+1.5,-S/2+1.5,S-3,S-3);
+      ctx.fillStyle='#fff'; ctx.fillRect(-7,-6,5,7); ctx.fillRect(3,-6,5,7); ctx.fillStyle='#3B1630'; ctx.fillRect(-5,-3,3,4); ctx.fillRect(5,-3,3,4); ctx.restore();
+    }
+    ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.strokeStyle='#3B1630'; ctx.lineWidth=4; ctx.font='800 34px sans-serif';
+    const m=Math.floor(run.dist/18); ctx.strokeText(m+' m',W/2,54); ctx.fillText(m+' m',W/2,54);
+    ctx.font='700 13px sans-serif'; ctx.lineWidth=3; const hud='Tentativo '+Math.min(tries+(run.state==='dead'?0:1),TRIES)+'/'+TRIES+' · migliore '+best+' m';
+    ctx.strokeText(hud,W/2,76); ctx.fillText(hud,W/2,76);
+    if(run.state==='wait'&&!over){ctx.font='800 20px sans-serif';ctx.strokeText('Tocca per partire',W/2,H*.4);ctx.fillText('Tocca per partire',W/2,H*.4)}
+    if(msg){ctx.font='800 26px sans-serif';ctx.lineWidth=5;ctx.strokeText(msg,W/2,H*.36);ctx.fillText(msg,W/2,H*.36)}
+  }
+  cv.__dash={state:()=>({why:why,y:run.y,on:run.on,s:run.state,dist:run.dist,over:over,obs:run.obs.map(o=>({t:o.t,x:o.x,w:o.w,h:o.h})),PX:PX,JL:JL})};
+  function frame(now){
+    if(!cv.isConnected)return;
+    acc+=Math.min(.1,(now-last)/1000); last=now;
+    while(acc>=1/60){acc-=1/60;step()}
+    draw(); requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
 /* ---------- Viste ---------- */
 function menuHTML(){
   const sc=S.scores||{A:0,B:0}, on=DU.hotOn();
@@ -848,15 +978,14 @@ function menuHTML(){
   const rows=GAMES.map(g=>{const x=Object.assign({A:0,B:0,D:0},gs[g.id]), pl=x.A+x.B+x.D;return `<tr><td>${esc(g.t)}${pl?`<small>${x.A===x.B?'sono pari':'vince di più '+lead(x)}</small>`:''}</td><td class="n">${x.A}</td><td class="n">${x.B}</td><td class="n">${x.D}</td><td class="r">${pl?rbtn(g.id):''}</td></tr>`}).join('');
   const board=`<section class="card score"><button class="sbh" data-act="g-sb" aria-expanded="${open}"><span><b>Classifica</b><br><span class="note">${tot.A+tot.B===0?'nessuna vittoria ancora':'in testa: '+lead(tot)+' · '+tot.A+' a '+tot.B}</span></span><span class="chev">${open?'▲':'▼'}</span></button>
    ${open?`<table class="sb"><thead><tr><th>Gioco</th><th class="n"><i class="dot"></i>${esc(nm('A'))}</th><th class="n"><i class="dot B"></i>${esc(nm('B'))}</th><th class="n">Pari</th><th></th></tr></thead><tbody>${rows}<tr class="tt"><td>Totale<small>${tot.A===tot.B?'sono pari':'vince di più '+lead(tot)}</small></td><td class="n">${tot.A}</td><td class="n">${tot.B}</td><td class="n">${sc.D||0}</td><td class="r">${tot.A+tot.B+(sc.D||0)?rbtn('all'):''}</td></tr></tbody></table>`:''}</section>`;
-  const cards=GAMES.filter(g=>!g.hotOnly||on).map(g=>{
-    const btns=(g.hotOnly?'':`<button class="btn sm" data-act="g-new" data-g="${g.id}" data-th="rom">${hs('hk')}Romantico</button>`)+
-      `<button class="btn sm ${g.hotOnly?'':'ghost'}" data-act="g-new" data-g="${g.id}" data-th="hot" ${on?'':'aria-disabled="true" style="opacity:.55"'}>${on?'Hot':'Hot (bloccato)'}</button>`+
+  const cards=GAMES.map(g=>{
+    const btns=`<button class="btn sm" data-act="g-new" data-g="${g.id}" data-th="rom">${hs('hk')}Gioca</button>`+
       (g.id==='ic'?'<button class="btn sm ghost" data-act="g-new" data-g="ic" data-th="ric">Ricordi nostri</button>':'')+
-      (OPTS[g.id]&&!g.hotOnly?`<button class="btn sm ghost" data-act="g-rand" data-g="${g.id}" aria-label="Partita a sorpresa">🎲 A sorpresa</button>`:'');
+      (OPTS[g.id]?`<button class="btn sm ghost" data-act="g-rand" data-g="${g.id}" aria-label="Partita a sorpresa">🎲 A sorpresa</button>`:'');
     return `<article class="card gcard" style="--g1:${g.gr.split(',')[0]};--g2:${g.gr.split(',')[1]}"><div class="gh"><span class="gico">${g.ico}</span><div><h3>${esc(g.t)}</h3><p class="sub">${esc(g.b)}</p></div></div><div class="actions" style="margin-top:2px">${btns}</div></article>`;
   }).join('');
   return `<div class="top"><h2 class="h2">Giochi</h2><span class="chip"><i class="dot"></i>${sc.A||0} · <i class="dot B"></i>${sc.B||0}</span></div>
-   ${listHTML()}${dailyHTML2()}${board}<p class="note" style="margin-top:-8px">Sfidatevi: chi vince sceglie il pegno. Potete giocare più partite insieme: ogni mossa resta salvata. "A sorpresa" sceglie le regole a caso. Le versioni hot (e i giochi Obbligo o verità e Dadi del desiderio) si sbloccano quando lo vogliono entrambi (sezione Noi).</p>${cards}`;
+   ${listHTML()}${dailyHTML2()}${board}<p class="note" style="margin-top:-8px">Sfidatevi: chi vince sceglie il pegno. Potete giocare più partite insieme: ogni mossa resta salvata. "A sorpresa" sceglie le regole a caso.</p>${cards}`;
 }
 function setupHTML(){
   const s=S.gset, info=ginfo(s.g), hot=s.th==='hot';
@@ -871,9 +1000,9 @@ function gateHTML(g){
    <button class="btn" data-act="g-gate">Sono ${esc(nm(g.turn))}</button><button class="link" data-act="g-back">Indietro</button></section>`;
 }
 function playHTML(){
-  const p=S.play, tt=p.g==='arch'?'Tiro con l\'arco':'Mini golf';
+  const p=S.play, tt=({arch:'Tiro con l\'arco',golf:'Mini golf',flap:'Flappy cuore',dash:'Cuore Dash'})[p.g]||'Gioco';
   return `<div class="top"><h2 class="h2">${tt}</h2><span class="chip"><i class="dot ${p.slot}"></i>${esc(nm(p.slot))}</span></div>
-   <div class="cvw"><canvas id="cv" width="320" height="${p.g==='arch'?480:440}" aria-label="${tt}"></canvas></div>
+   <div class="cvw"><canvas id="cv" width="320" height="${(p.g==='arch'||p.g==='flap')?480:440}" aria-label="${tt}"></canvas></div>
    <div class="actions" style="justify-content:center"><button class="btn ghost" data-act="g-stop">Interrompi</button></div>`;
 }
 function render(){
@@ -892,9 +1021,9 @@ function render(){
   else if(g.type==='mem')body=memHTML(g);
   else if(g.type==='bs')body=bsHTML(g);
   else if(g.type==='ic')body=icHTML(g);
-  else if(g.type==='obv')body=obvHTML(g);
-  else if(g.type==='dadi')body=dadiHTML(g);
   else if(g.type==='arch')body=scoreHTML(g,'punti',`${cf.n||5} frecce a testa${cf.wind?', con vento':''}${cf.mov?' e bersaglio mobile':''}. Tocca e trascina: il mirino segue il dito (sta un po' sopra, così lo vedi). Rilascia per tirare. Il vento sposta la freccia: compensa. Lo stesso vento per tutti e due.`);
+  else if(g.type==='flap')body=scoreHTML(g,'tubi',`Tocca per battere le ali e passa tra i tubi. ${cf.tries||3} ${(+cf.tries||3)===1?'tentativo':'tentativi'} a testa: conta il migliore. Gli stessi tubi per tutti e due: vince chi ne supera di più.`);
+  else if(g.type==='dash')body=scoreHTML(g,'m',`Il cuore corre da solo: tocca per saltare (tieni premuto per saltare di nuovo). ${cf.tries||3} ${(+cf.tries||3)===1?'tentativo':'tentativi'} a testa: conta il migliore. Lo stesso percorso per tutti e due: vince chi va più lontano.`);
   else body=scoreHTML(g,'colpi',`${cf.holes||3} buche${cf.bump?' con bumper':''}, stesso percorso per tutti e due. Trascina all'indietro dalla pallina e rilascia: vince chi tira meno.`);
   return `<div class="top"><button class="btn ghost sm" data-act="g-back" aria-label="Torna alle partite">← Indietro</button><span class="chip">${esc(info.t)} · ${esc(TN[g.th]||'')}</span></div>${body}`;
 }
@@ -910,11 +1039,6 @@ function click(act,t){
   if(act==='g-del2'){S.gdel=null;DU.clearGame(t.dataset.id);return true}
   if(act==='g-daily'){startDaily(DU.todayStr(),t.dataset.id);return true}
   if(act==='g-rand'){const id=t.dataset.g,cfg=randCfg(id);DU.toast('Regole a sorpresa: '+cfgText(id,cfg));startGame(id,'rom',cfg);return true}
-  if(act==='g-obv'){obvPick(t.dataset.k);return true}
-  if(act==='g-obvdone'){obvNext(false);return true}
-  if(act==='g-obvskip'){obvNext(true);return true}
-  if(act==='g-dadiroll'){dadiRoll();return true}
-  if(act==='g-dadidone'){dadiDone();return true}
   if(act==='g-again'){const g=S.game;if(g){const ty=g.type,th=g.th,cf=g.cfg;DU.clearGame();openSetup(ty,th,cf)}return true}
   if(act==='g-q20set'){q20Set();return true}
   if(act==='g-q20ask'){q20Ask(false);return true}
@@ -964,7 +1088,7 @@ function click(act,t){
 function mount(){
   const cv=document.getElementById('cv'); if(!cv||!S.play||!S.game)return;
   const cf=S.game.cfg||{}, sd=S.game.seed||1;
-  if(S.play.g==='arch')mountArch(cv,S.play.th,cf,sd); else mountGolf(cv,S.play.th,cf,sd);
+  const pg=S.play.g; if(pg==='arch')mountArch(cv,S.play.th,cf,sd); else if(pg==='flap')mountFlap(cv,cf,sd); else if(pg==='dash')mountDash(cv,cf,sd); else mountGolf(cv,S.play.th,cf,sd);
 }
 return {render:render,click:click,mount:mount,myTurn:myTurn,dailyChallenges:dailyChallenges,cfgText:cfgText,ginfo:ginfo};
 };

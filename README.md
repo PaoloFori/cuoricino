@@ -18,7 +18,7 @@ Autore: Paolo Fori.
 - **Android:** apri il link in Chrome, tocca il menu, poi "Aggiungi a schermata Home".
 
 ## I giochi
-Si trovano nella sezione **Giochi**. Si gioca a turno, ognuno dal proprio telefono, e c'è una classifica delle vittorie per ogni gioco e in totale (con "Azzera").
+Si trovano nella sezione **Giochi**. Si gioca a turno, ognuno dal proprio telefono, e c'è una classifica delle vittorie per ogni gioco e in totale (con "Azzera"). Quasi tutti hanno **quattro livelli di difficoltà** (Facile, Normale, Difficile, Esperto): cambiano la griglia, la velocità, la grandezza del bersaglio o della buca, il vento e gli ostacoli.
 
 | Gioco | Com'è |
 |---|---|
@@ -30,8 +30,8 @@ Si trovano nella sezione **Giochi**. Si gioca a turno, ognuno dal proprio telefo
 | ⭕ **Tris** | Il classico tre in fila, anche in versione grande 5×5. |
 | 🃏 **Memory a coppie** | Gira le carte e trova le coppie: ogni coppia ti dà un altro turno. |
 | ⛳ **Mini golf** | Campi casuali, ostacoli e bumper. Lo stesso percorso per tutti e due. |
-
-Altri due giochi sono solo **hot** (si sbloccano se dicono sì tutti e due): 🔥 **Obbligo o verità** e 🎲 **Dadi del desiderio**, con tre livelli fino al molto esplicito.
+| 🐦 **Flappy cuore** | Tocca per battere le ali e passa tra i tubi. Stessi tubi per tutti e due: vince chi ne supera di più. |
+| 🔷 **Cuore Dash** | Il cuore corre da solo: tocca per saltare spine, blocchi e buche. Stesso percorso per tutti e due: vince chi va più lontano. |
 
 Le partite restano salvate: puoi uscire con "← Indietro" e giocarne più d'una insieme. Ogni giorno c'è una **Sfida del giorno** con regole a caso, e su ogni gioco "🎲 A sorpresa".
 

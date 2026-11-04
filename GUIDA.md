@@ -118,3 +118,9 @@ La cartella `tests/` contiene le prove automatiche (vedi `tests/README.md`): cif
 - **Genere:** ognuno sceglie come vuole essere scritto (Noi → "Come ti scrivono le domande", oppure dal riquadro in Home). Le forme come «stanco/a» diventano «stanco» o «stanca» per chi legge, e le risposte dell'altro si leggono al suo genere.
 - **Il nome al posto di "il partner":** le domande e le missioni usano il nome dell'altra persona.
 - **Domande vere:** ogni «Preferisci…» è ora una domanda ("Mare o montagna?", "Un massaggio con l'olio o un bagno in due?") e le domande a frammenti ("Pizza: quale?", "Casa dei sogni?") sono frasi complete. Le risposte già date non cambiano.
+
+## Novità versione 17
+- **Giochi hot tolti:** niente più Obbligo o verità, Dadi del desiderio né versione hot dei giochi. Restano le domande, i quiz, la missione e la conversazione hot.
+- **Due giochi nuovi:** **Flappy cuore** (tocca per volare tra i tubi) e **Cuore Dash** (il cuore corre, tocca per saltare spine, blocchi e buche). Stesso percorso per tutti e due, vince il punteggio più alto; 1, 3 o 5 tentativi a testa (conta il migliore).
+- **Livelli di difficoltà:** Tiro con l'arco e Mini golf hanno Facile/Normale/Difficile/Esperto. Memory arriva a 12 coppie, con l'opzione di rimescolare le carte dopo ogni errore. Tris ha il 7×7 (cinque in fila) e Forza 4 il gigante 11×9.
+- **Domande hot riviste:** controllate una per una. Una sola emoji e solo dove c'entra, e dove una frase diceva «me» o «mio» ora c'è il nome dell'altra persona, così la stessa carta ha senso per entrambi.

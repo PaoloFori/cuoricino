@@ -242,7 +242,7 @@ NEVER.forEach(n=>DECK.push({t:`Ti è mai capitato di `+n+`?`,o:[`Mai`,`Una volta
 HOT_PREFER.forEach((p,i)=>DECK.push({t:HOT_PREF_T[i],o:p.split('|').concat(NOPE),cat:'hot',hot:true,pref:true}));
 HOT_WHO.forEach(w=>DECK.push({t:`Chi dei due `+NOSLASH(w),who:true,cat:'hot',hot:true,nope:true}));
 HOT_HONEST.forEach(h=>DECK.push({t:h.t,o:h.o,cat:'hot',hot:true}));
-HOT_NEVER.forEach(n=>DECK.push({t:`Ti è mai capitato di `+n+`?`,o:[`Mai`,`Una volta`,`Più volte`,NOPE],cat:'hot',hot:true}));
+HOT_NEVER.forEach(n=>{const m=n.match(/^(.*?)\s*((?:\p{Extended_Pictographic}\uFE0F?)+)$/u),b=m?m[1]:n;DECK.push({t:`Ti è mai capitato di `+b+`?`+(m?' '+m[2]:''),o:[`Mai`,`Una volta`,`Più volte`,NOPE],cat:'hot',hot:true})});
 const BASE_N=DECK.length;
 /* Domande extra (sempre in fondo al mazzo: gli indici esistenti non cambiano). */
 [
@@ -1506,63 +1506,6 @@ HOTPACKS.push({id:'h4',hot:true,title:`Senza filtri`,blurb:`Un quiz esplicito, s
   HQ(`Il sesso perfetto dura…`,`Pochi minuti intensi`,`Mezz'ora`,`Un'ora o più`,`Tutta la notte`),
   HQ(`Dopo il sesso mi piace…`,`Restare abbracciati`,`Parlare di tutto`,`Una doccia insieme`,`Dormire subito`)]});
 
-/* Obbligo o verità: [livello, testo]. Il livello scelto include anche i più bassi. */
-const OBV={
- t:[
-  [1,`Qual è stata la prima cosa che hai pensato di me, fisicamente?`],[1,`Qual è il punto del mio corpo che preferisci baciare?`],
-  [1,`Hai mai fatto un sogno erotico con me? Raccontalo.`],[1,`Qual è il capo che indosso e ti fa impazzire?`],
-  [1,`Quando ti sei sentito/a più attratto/a da me?`],[1,`Cosa ti accende subito: un tocco, una parola o uno sguardo?`],
-  [1,`Qual è la cosa più audace che hai fatto per sedurre qualcuno?`],[1,`Cosa ti fa sentire sexy?`],
-  [1,`Preferisci essere sedotto/a lentamente o in modo diretto?`],[1,`Dove ti piace di più essere baciato/a?`],
-  [1,`Quale canzone è per te la più sensuale?`],[1,`Qual è il posto più strano in cui vorresti baciarmi?`],
-  [2,`Qual è la cosa che ti piace di più quando facciamo l'amore?`],[2,`C'è qualcosa che vorresti che facessi più spesso a letto?`],
-  [2,`Qual è la tua posizione preferita e perché?`],[2,`Raccontami la volta in cui mi hai desiderato di più.`],
-  [2,`Quale parte del tuo corpo vorresti che toccassi di più?`],[2,`Preferisci dare o ricevere sesso orale?`],
-  [2,`Qual è la fantasia che hai e non mi hai ancora detto?`],[2,`Dove ti piacerebbe farlo, oltre al letto?`],
-  [2,`Ti eccita di più la luce accesa o spenta?`],[2,`Qual è il mio punto più sensibile secondo te?`],
-  [2,`Ti piacerebbe farlo in un posto dove potrebbero scoprirci?`],[2,`Preferisci i preliminari lunghi o andare dritti al punto?`],
-  [3,`Descrivimi nei dettagli la cosa più eccitante che abbiamo fatto a letto.`],[3,`Quale giocattolo erotico vorresti provare con me?`],
-  [3,`Qual è la fantasia più sporca che hai in testa adesso? Dilla senza filtri.`],[3,`Come ti piace essere toccato/a tra le gambe? Spiegamelo con precisione.`],
-  [3,`Hai mai pensato a me mentre ti toccavi? Cosa immaginavi?`],[3,`Quale parola sporca ti eccita se te la sussurro?`],
-  [3,`Ti piacerebbe essere legato/a o legare me? Con cosa?`],[3,`Qual è la cosa più estrema che vorresti provare a letto, almeno una volta?`],
-  [3,`Come ti piace arrivare all'orgasmo? Dimmi cosa ti serve.`],[3,`Cosa ti piacerebbe che ti dicessi mentre facciamo sesso?`],
-  [3,`Come ti piace il sesso orale: lento e dolce, o intenso? Dimmi cosa vuoi.`],[3,`Descrivi la notte perfetta di sesso con me, dall'inizio alla fine.`],
-  [3,`Quale posizione non abbiamo ancora provato e vorresti provare stasera?`],[3,`Hai mai fantasticato su un gioco a tre? Cosa immaginavi?`]
- ],
- d:[
-  [1,`Dai un bacio lento sul collo all'altro/a.`],[1,`Sussurra all'orecchio la cosa più sexy che ti viene in mente.`],
-  [1,`Fai un massaggio alle spalle per due minuti.`],[1,`Guardatevi negli occhi in silenzio per un minuto, senza ridere.`],
-  [1,`Scrivi con un dito una parola maliziosa sulla schiena dell'altro/a: deve indovinarla.`],[1,`Dai un bacio lungo e lento, a occhi chiusi.`],
-  [1,`Togli un capo d'abbigliamento all'altro/a, lentamente.`],[1,`Balla un lento stretto, pelle contro pelle.`],
-  [1,`Bacia ogni dito di una mano dell'altro/a.`],[1,`Siediti sulle sue gambe e baciatevi per trenta secondi.`],
-  [1,`Mordicchia piano il lobo dell'orecchio.`],[1,`Dì tre cose che ti attirano fisicamente dell'altro/a.`],
-  [2,`Toglietevi la maglietta e fate un massaggio con olio per cinque minuti.`],[2,`Bacia l'altro/a dal collo fino all'ombelico, lentamente.`],
-  [2,`Fai uno spogliarello di un minuto su una canzone a tua scelta.`],[2,`Fatti bendare e lascia che l'altro/a ti baci dove vuole per un minuto.`],
-  [2,`Accarezza l'interno coscia dell'altro/a per un minuto, solo con la punta delle dita.`],[2,`Racconta a voce bassa una tua fantasia mentre accarezzi l'altro/a.`],
-  [2,`Dai una sculacciata giocosa e dì perché ti piace.`],[2,`Fai una lap dance di un minuto.`],
-  [2,`Resta in intimo per il resto della partita.`],[2,`Sussurra all'orecchio cosa vorresti fargli/le stanotte, nei dettagli.`],
-  [2,`Fate un bacio con la lingua di un minuto intero, senza usare le mani.`],[2,`Lascia un segno leggero in un punto nascosto, se l'altro/a è d'accordo.`],
-  [3,`Spogliatevi del tutto e fate un massaggio completo di dieci minuti.`],[3,`Fai sesso orale all'altro/a per due minuti, poi scambiatevi.`],
-  [3,`Tocca l'altro/a tra le gambe, sopra l'intimo, finché dice di fermarti o di continuare.`],[3,`Fatti bendare: l'altro/a decide cosa farti per tre minuti.`],
-  [3,`Mostra all'altro/a come ti tocchi quando sei da solo/a.`],[3,`Descrivi ad alta voce cosa stai per fare all'altro/a, poi fallo.`],
-  [3,`Scegli una posizione e provatela adesso.`],[3,`Lecca qualcosa di dolce (panna, cioccolato) da un punto del corpo dell'altro/a.`],
-  [3,`Sculaccia piano l'altro/a e chiedi se ne vuole di più o di meno.`],[3,`Resta nudo/a per i prossimi dieci minuti e comanda tu cosa succede.`],
-  [3,`Dì ad alta voce tre cose sporche che vorresti fare stanotte.`],[3,`Fate sesso a luce accesa, guardandovi negli occhi per tutto il tempo.`],
-  [3,`Lega i polsi dell'altro/a con una sciarpa e fai quello che vuoi per cinque minuti, se è d'accordo.`],[3,`Fai quello che l'altro/a ti chiede, per tre minuti, senza dire di no (resta valido il "stop").`]
- ]
-};
-/* Dadi del desiderio: azione + punto del corpo + modo. lv = livello minimo. */
-const DADI={
- act:[[1,`Bacia`],[1,`Accarezza`],[1,`Massaggia`],[1,`Sfiora con le dita`],[1,`Soffia su`],[1,`Sfiora con le labbra`],
-  [2,`Lecca`],[2,`Mordicchia`],[2,`Bacia con la lingua`],[2,`Stringi`],[2,`Massaggia con l'olio`],
-  [3,`Succhia`],[3,`Sculaccia piano`],[3,`Lecca e soffia su`],[3,`Accarezza con un cubetto di ghiaccio`],[3,`Tocca`]],
- zone:[[1,`il collo`],[1,`l'orecchio`],[1,`la schiena`],[1,`le mani`],[1,`il viso`],[1,`la pancia`],[1,`le spalle`],[1,`l'interno del polso`],
-  [2,`l'interno coscia`],[2,`il petto`],[2,`i fianchi`],[2,`la nuca`],[2,`il sedere`],[2,`l'inguine, sopra i vestiti`],[2,`le caviglie`],
-  [3,`i capezzoli`],[3,`il sedere nudo`],[3,`l'inguine`],[3,`tra le gambe`],[3,`il sesso`],[3,`l'interno coscia, vicino al sesso`]],
- how:[[1,`per 30 secondi`],[1,`lentamente`],[1,`guardando negli occhi l'altro/a`],[1,`a occhi chiusi`],[1,`per un minuto intero`],
-  [2,`senza usare le mani`],[2,`poi fermati e riparti`],[2,`finché l'altro/a dice stop`],[2,`sempre più piano`],
-  [3,`finché l'altro/a trema`],[3,`senza fretta, per tre minuti`],[3,`finché l'altro/a ti chiede di più`]]
-};
 PEGNI.hot.push(
  `Il vincitore sceglie una posizione e la provate.`,`Un massaggio con olio di dieci minuti, ovunque.`,`Chi perde si spoglia di un capo ogni minuto per cinque minuti.`,
  `Sesso orale di due minuti, deciso dal vincitore.`,`Il vincitore comanda per dieci minuti: l'altro/a esegue (con stop sempre valido).`,
@@ -1818,6 +1761,12 @@ const FIXO={481:[`Pronto/a il giorno prima`,`All'ultimo minuto`,`Ci metto dentro
 Object.keys(FIXT).forEach(i=>{if(DECK[i])DECK[i].t=FIXT[i]});
 Object.keys(FIXO).forEach(i=>{if(DECK[i]&&DECK[i].o&&DECK[i].o.length===FIXO[i].length)DECK[i].o=FIXO[i]});
 
+/* Domande hot riviste: il «me» ambiguo ora è il nome dell'altro, le risposte combaciano con la domanda. */
+const FIXHT={"1096":"Qual è il modo migliore per attirare la tua attenzione?","239": "Camicia e niente altro: meglio tu con quella di {altro} o {altro} con la tua?", "288": "Il mio modo più dolce di parlare a letto…", "300": "Ti è mai capitato di fare un sogno erotico con {altro}?", "305": "Ti è mai capitato di toccarti pensando a {altro}?", "1097": "Quale parte del corpo di {altro} ti attira di più?", "1101": "Un abito di {altro} che ti fa perdere la testa?", "1103": "Una canzone che ti fa pensare a {altro} in modo seducente?", "1104": "Qual è il luogo più insolito in cui vi siete baciati?", "1106": "Cosa ti manda in tilt di {altro}?", "1110": "Qual è la frase più dolce (e audace) che {altro} ti ha detto?", "1111": "Quale fantasia romantica vorresti vivere con {altro}?", "1120": "In quale posto hai immaginato di baciare {altro}?", "1124": "Un regalo audace che faresti a {altro}?", "1127": "Cosa ti fa sentire più vicino/a a {altro}?", "1128": "Quando ti senti più a tuo agio con {altro}?", "1132": "Qual è una cosa su voi due che di solito non dici a {altro}?", "1137": "Come ti piace svegliarti con {altro}?", "1159": "Come ti piace essere toccato/a tra le gambe? Spiega a {altro} cosa funziona davvero.", "1160": "Qual è la fantasia più spinta che hai in testa e che non hai mai detto a {altro}?", "1161": "Quale giocattolo erotico vorresti provare con {altro}?", "1162": "Ti piacerebbe essere legato/a da {altro} o legare {altro}?", "1166": "Qual è il punto del corpo di {altro} che ti fa perdere la testa quando lo tocchi o lo baci?", "1169": "Descrivi la notte di sesso perfetta con {altro}, dall'inizio alla fine.", "1170": "Preferisci arrivare all'orgasmo prima, insieme o dopo {altro}?", "1173": "Ti tocchi pensando a {altro}? Cosa immagini?", "1174": "Ti piacerebbe guardare {altro} mentre si tocca, o farti guardare?", "1176": "Quale zona del corpo vorresti che {altro} esplorasse con più calma?", "1179": "Cosa ti piacerebbe che {altro} facesse di più a letto?", "1180": "C'è qualcosa a letto che ti piace meno e che vorresti dire a {altro} con delicatezza?", "1183": "Se potessi chiedere a {altro} qualsiasi cosa stanotte, senza giudizio, cosa sarebbe?", "1187": "Ti eccita di più vedere {altro} senza vestiti o in intimo?", "1188": "Che cosa ti fa venire subito voglia di {altro}?", "1190": "Ti piace quando {altro} ti tira i capelli o ti stringe forte?", "1191": "Descrivi cosa faresti a {altro}, ora, se foste soli e senza vestiti.", "1194": "Qual è la cosa più audace che vorresti indossare o fare per sedurre {altro}?", "1199": "Dove vorresti vivere con {altro} un momento audace, in un luogo pubblico?", "1200": "Quanto ti piace che ti tocchino, bacino o lecchino il petto (o il seno)? Come?", "1204": "Cosa vorresti che {altro} ti facesse con la lingua?", "1208": "Avete una parola sicura per fermare tutto? Quale usereste?", "1212": "Ti piacerebbe massaggiare {altro} con l'olio fino a finire a letto?", "1213": "Descrivi in tre parole il sesso con {altro}.", "1214": "Cosa vorresti che {altro} ti dicesse mentre fate sesso?", "1217": "Qual è la cosa più eccitante che {altro} potrebbe scriverti in un messaggio?", "1219": "Qual è la cosa più eccitante che hai visto fare a {altro}, senza che lo sapesse?", "1220": "Come ti piace che {altro} ti tocchi il seno o il petto: piano, deciso, con la bocca?", "1222": "Cosa vorresti che {altro} ti facesse con le mani, adesso?", "1228": "Descrivi la cosa più piccante che faresti a {altro} in una camera d'hotel.", "1230": "Qual è un punto del corpo di {altro} che non hai ancora esplorato abbastanza?", "1236": "Racconta la volta in cui hai goduto di più con {altro}.", "1240": "Qual è una cosa che non hai mai osato chiedere a {altro} a letto?", "1243": "Quanto ti piace che {altro} ti sussurri frasi sporche mentre fate l'amore?", "1248": "Cosa ti piacerebbe che {altro} indossasse per te?", "1250": "Preferisci guidare tu o lasciare che {altro} scelga tutto?", "1251": "Qual è la cosa più eccitante che {altro} potrebbe dirti sottovoce alla cassa del supermercato?", "1252": "Dimmi tre cose che vorresti fare al corpo di {altro} stanotte.", "1254": "Quale parte del tuo corpo desideri che {altro} baci più a lungo?", "1255": "Quanto ti eccita sentire gemere {altro}?", "1256": "Hai mai desiderato che {altro} ti prendesse senza dire niente, con uno sguardo?", "1260": "Cosa ha fatto o indossato {altro} che ti ha fatto perdere il controllo?", "1262": "Cosa ti piace sentirti dire all'orecchio da {altro}?", "1263": "Un luogo, un'ora e una situazione per il vostro prossimo momento audace?", "1266": "Fantastichi su un massaggio di {altro} che si trasforma in sesso?", "1267": "Qual è il tuo punto più sensibile e come dovrebbe toccarlo {altro}?", "1270": "Con quale parola ti piace che {altro} ti chiami quando fate l'amore?", "1272": "Cosa hai sempre voluto fare a {altro} e non ti ha mai lasciato fare?", "1273": "In che modo audace potrebbe svegliarti {altro} domani?", "1275": "Qual è la cosa più eccitante che potreste fare in cucina?", "1276": "Quale parola non vorresti mai sentirti dire a letto da {altro}?", "1278": "Cosa vi piacerebbe fare prima, durante e dopo il sesso, perché sia perfetto?", "1146": "Che finale preferisci, per una notte insieme?"};
+const FIXHO={"239": ["Io, con la camicia di {altro}", "{altro}, con la mia camicia"], "1099": ["Io", "{altro}", "Tutti e due", "Non ricordo"], "1161": ["Vibratore", "Bendaggio e manette morbide", "Olio da massaggio caldo", "Nessuno, mi basta {altro}"], "1174": ["Guardare {altro}", "Farmi guardare", "Tutte e due le cose", "Non ancora"], "1187": ["Senza vestiti", "In intimo", "Con qualcosa addosso", "Dipende da cosa indossa"], "1212": ["Subito", "Sì, una sera", "Solo se mi massaggia prima", "Preferisco altro"], "1233": ["Bendare {altro}", "Essere bendato/a", "Tutte e due", "No"], "1250": ["Guido io", "Guida {altro}", "A turno", "Insieme, a sensazione"]};
+Object.keys(FIXHT).forEach(i=>{if(DECK[i])DECK[i].t=FIXHT[i]});
+Object.keys(FIXHO).forEach(i=>{const q=DECK[i];if(q&&q.o){const o=FIXHO[i].slice();if(q.hot)o.push(NOPE);if(o.length===q.o.length)q.o=o}});
+
 /* Resoconto del mese: pool di domande (3 fisse + da 3 a 6 scelte dal mese) */
 const RECAP=[
  {t:`Quanto è stato bello questo mese insieme?`,o:[`Bellissimo`,`Bello`,`Così così`,`Faticoso`],fixed:1},
@@ -1869,26 +1818,21 @@ const RECAP=[
 
 
 
-/* Emoji sulle domande hot: velate o esplicite, giocano con i simboli. Si applica a tutto il hot che non le ha già. */
+/* Emoji sulle domande hot: una sola, e solo dove c'entra; le più esplicite giocano con i simboli (🍑 👅 🍒 💦). */
 const EMO_RE=/\p{Extended_Pictographic}/u;
-const EMO_K=[[/bacio|baci|bacia|labbra/i,'💋'],[/massagg/i,'💆'],[/doccia|bagno|vasca/i,'🚿'],[/candel/i,'🕯️'],[/vino|champagne|brind/i,'🍷'],[/music|canzon|playlist|ballo|ballare|balla/i,'🎶'],[/sussurr/i,'🤫'],[/bend/i,'🙈'],[/ghiaccio/i,'🧊'],[/panna|cioccolat|fragol/i,'🍓'],[/olio/i,'💧'],[/sedere|sculacc|fondoschiena/i,'🍑'],[/hotel/i,'🏨'],[/sguard|occhi/i,'👀'],[/notte|stanotte|sera/i,'🌙'],[/mattin|sveglia|colazione/i,'☀️'],[/orgasm|godere|goduto|venire/i,'💦'],[/nud|spogli|intimo|lingerie|vestit/i,'👙'],[/oral|lingua|lecca/i,'👅'],[/seno|petto|capezzol/i,'🍒'],[/legat|polsi|sciarpa/i,'🎀'],[/gioc|dadi|carte|ruolo/i,'🎲'],[/collo|orecchio/i,'😘'],[/mani|tocc|carezz|sfior/i,'✋'],[/sesso|letto|fare l'amore|posizion|passion/i,'🔥'],[/fantasi|sogno/i,'😈']];
-const EMO_X=['🍆💦','🍑🔥','🍒😈','😈💦','🔥🍑','👅🍒','🍆🍑','💦😏'];
+const EMO_K=[[/sesso anale|sedere|fondoschiena|sculacc/i,'🍑'],[/orgasm|godere|goduto|venire|venga/i,'💦'],[/oral|lingua|lecca|leccat/i,'👅'],[/\bseno\b|petto|capezzol/i,'🍒'],[/(?<!idro)massagg/i,'💆'],[/vasca|bagno/i,'🛁'],[/doccia/i,'🚿'],[/candel/i,'🕯️'],[/vino|champagne|brind/i,'🍷'],[/music|canzon|playlist|ballo|ballare|balla/i,'🎶'],[/sussurr/i,'🤫'],[/bend/i,'🙈'],[/ghiaccio/i,'🧊'],[/panna|cioccolat|fragol/i,'🍓'],[/hotel/i,'🏨'],[/sguard|occhi/i,'👀'],[/mattin|sveglia|colazione/i,'☀️'],[/notte|stanotte/i,'🌙'],[/legat|polsi|sciarpa/i,'🎀'],[/dadi|carte|ruolo|gioco/i,'🎲'],[/bacio|baci|bacia|labbra/i,'💋'],[/collo|orecchio/i,'😘'],[/fantasi|sogno/i,'😈'],[/nud|spogli|intimo|lingerie/i,'👙'],[/sesso|letto|fare l'amore|passion|posizion/i,'🔥']];
 const EMO_D={flirt:'😏',fant:'😈',int:'💞',spicy:'🌶️',xxx:'🔥'};
 const hsh=t=>{let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))>>>0;return h};
 function decor(t,sub){
   if(EMO_RE.test(t))return t;
-  const k=EMO_K.find(x=>x[0].test(t)); let e=k?k[1]:(EMO_D[sub]||'🔥');
-  if(sub==='xxx')e+=EMO_X[hsh(t)%EMO_X.length]; else if(sub==='spicy'&&hsh(t)%2)e+='🍑';
-  return t.replace(/\s*$/,'')+' '+e;
+  const k=EMO_K.find(x=>x[0].test(t)); let e=k?k[1]:(hsh(t)%3===0?(EMO_D[sub]||''):'');
+  return e?t.replace(/\s*$/,'')+' '+e:t;
 }
-const decorO=(o,sub)=>o?o.map(x=>(x===NOPE||EMO_RE.test(x))?x:(EMO_K.find(k=>k[0].test(x))?x+' '+EMO_K.find(k=>k[0].test(x))[1]:x)):o;
-DECK.forEach(q=>{if(!q.hot||q.who)return; if(q.t!=='Preferisci…')q.t=decor(q.t,q.sub); q.o=decorO(q.o,q.sub)});
-HOTPACKS.forEach(p=>p.qs.forEach(q=>{q.t=decor(q.t,'int'); q.o=decorO(q.o,'int')}));
-OBV.t.forEach(x=>{x[1]=decor(x[1],x[0]===3?'xxx':x[0]===2?'spicy':'flirt')});
-OBV.d.forEach(x=>{x[1]=decor(x[1],x[0]===3?'xxx':x[0]===2?'spicy':'flirt')});
-['act','zone','how'].forEach(k=>DADI[k].forEach(x=>{const e=EMO_K.find(r=>r[0].test(x[1]));if(e&&!EMO_RE.test(x[1]))x[1]+=' '+e[1]}));
+const decorO=o=>o?o.map(x=>{if(x===NOPE||EMO_RE.test(x)||hsh(x)%2)return x;const k=EMO_K.find(r=>r[0].test(x));return k?x+' '+k[1]:x}):o;
+DECK.forEach(q=>{if(!q.hot||q.who)return; if(!/[A-Za-zà-ù]\s*$/.test(q.t)||true)q.t=decor(q.t,q.sub); q.o=decorO(q.o)});
+HOTPACKS.forEach(p=>p.qs.forEach(q=>{q.t=decor(q.t,'int'); q.o=decorO(q.o)}));
 PEGNI.hot=PEGNI.hot.map(t=>decor(t,'spicy'));
 
-window.DUC={MISSIONS:MISSIONS,PHQ:PHQ,TALK:TALK,OBV:OBV,DADI:DADI,BASE_N:BASE_N,RECAP:RECAP,SPECIALS:SPECIALS,PACKS:PACKS,HOTPACKS:HOTPACKS,DECK:DECK,PEGNI:PEGNI,IC:IC,CITIES:CITIES,STATUS:STATUS,STATUS_HOT:STATUS_HOT,NOPE:NOPE,
+window.DUC={MISSIONS:MISSIONS,PHQ:PHQ,TALK:TALK,BASE_N:BASE_N,RECAP:RECAP,SPECIALS:SPECIALS,PACKS:PACKS,HOTPACKS:HOTPACKS,DECK:DECK,PEGNI:PEGNI,IC:IC,CITIES:CITIES,STATUS:STATUS,STATUS_HOT:STATUS_HOT,NOPE:NOPE,
  counts:{prefer:PREFER.length,who:WHO.length,honest:HONEST.length,never:NEVER.length,hot:HOT_PREFER.length+HOT_WHO.length+HOT_HONEST.length+HOT_NEVER.length}};
 })();
