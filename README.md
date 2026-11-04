@@ -31,6 +31,10 @@ Si trovano nella sezione **Giochi**. Si gioca a turno, ognuno dal proprio telefo
 | 🃏 **Memory a coppie** | Gira le carte e trova le coppie: ogni coppia ti dà un altro turno. |
 | ⛳ **Mini golf** | Campi casuali, ostacoli e bumper. Lo stesso percorso per tutti e due. |
 
+Altri due giochi sono solo **hot** (si sbloccano se dicono sì tutti e due): 🔥 **Obbligo o verità** e 🎲 **Dadi del desiderio**, con tre livelli fino al molto esplicito.
+
+Le partite restano salvate: puoi uscire con "← Indietro" e giocarne più d'una insieme. Ogni giorno c'è una **Sfida del giorno** con regole a caso, e su ogni gioco "🎲 A sorpresa".
+
 Oltre ai giochi ci sono i **quiz**: la domanda del giorno, il mazzo con più di mille domande divise per categoria, quiz a tema e il resoconto di fine mese. I contenuti **Hot 18+** si sbloccano solo se dicono sì tutti e due.
 
 Per la configurazione del server vedi [GUIDA.md](GUIDA.md).

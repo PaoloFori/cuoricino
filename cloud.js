@@ -97,6 +97,12 @@ window.DUCloud=function(cfg){
       couple=await rpc('join_couple',{c:c});cache={};cursor='';ready=false;save();return couple;
     },
     async deviceCode(){return rpc('make_device_code')},
+    rpc:rpc,
+    async fn(name,body){
+      await auth();
+      const r=await fetch(base+'/functions/v1/'+name,{method:'POST',headers:{apikey:anon,Authorization:'Bearer '+sess.at,'Content-Type':'application/json'},body:JSON.stringify(body||{})});
+      if(!r.ok)throw new Error('HTTP '+r.status); return r.json().catch(()=>({}));
+    },
     leave(){couple=null;sess=null;cache={};listeners=[];cursor='';ready=false;clearInterval(timer);timer=0;try{localStorage.removeItem(KEY)}catch(e){}}
   };
 };

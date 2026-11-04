@@ -3,7 +3,7 @@
 'use strict';
 window.DUG=function(DU){
 const S=DU.S, esc=DU.esc, nm=DU.nm, me=DU.me, other=DU.other, hs=DU.heartSvg, D=window.DUC;
-const rnd=n=>Math.floor(Math.random()*n);
+const rnd=n=>Math.floor(Math.random()*n), rndG=rnd;
 const pick=a=>a[rnd(a.length)];
 const clone=o=>JSON.parse(JSON.stringify(o));
 const GAMES=[
@@ -14,10 +14,35 @@ const GAMES=[
  {id:'arch',t:'Tiro con l\'arco',b:'Tendi l\'arco, tieni conto del vento e colpisci il centro.',hidden:false,ico:'🏹',gr:'#ee0979,#ff6a00'},
  {id:'tris',t:'Tris',b:'Il classico tre in fila, anche in versione grande 5×5.',hidden:false,ico:'⭕',gr:'#11998e,#38ef7d'},
  {id:'mem',t:'Memory a coppie',b:'Gira le carte e trova le coppie: ogni coppia ti dà un altro turno.',hidden:false,ico:'🃏',gr:'#f7971e,#ffd200'},
- {id:'golf',t:'Mini golf',b:'Campi casuali, ostacoli e bumper. Lo stesso percorso per tutti e due.',hidden:false,ico:'⛳',gr:'#56ab2f,#a8e063'}];
+ {id:'golf',t:'Mini golf',b:'Campi casuali, ostacoli e bumper. Lo stesso percorso per tutti e due.',hidden:false,ico:'⛳',gr:'#56ab2f,#a8e063'},
+ {id:'obv',t:'Obbligo o verità',b:'Una carta alla volta: rispondi senza filtri o fai quello che dice. Tre livelli, fino al molto esplicito.',hidden:false,ico:'🔥',gr:'#e52d27,#b31217',hotOnly:true},
+ {id:'dadi',t:'Dadi del desiderio',b:'Tira i dadi: azione, punto del corpo e modo. Si fa davvero, a turno. Tre livelli.',hidden:false,ico:'🎲',gr:'#8e2de2,#4a00e0',hotOnly:true}];
 const TN={rom:'Romantico',hot:'Hot',ric:'I nostri ricordi'};
 const ginfo=id=>GAMES.find(x=>x.id===id);
 const actorOK=g=>S.mode==='local'||g.turn===me();
+/* La partita aspetta me? (serve all'elenco partite e alle notifiche) */
+function myTurn(g,m){
+  if(!g||g.w)return false;
+  if(g.type==='arch'||g.type==='golf')return !!g.s&&g.s[m]===null;
+  if(g.type==='bs'&&g.phase==='place')return !(g.ready&&g.ready[m]);
+  if(g.type==='ic'&&g.phase==='pick')return !g.pick||g.pick[m]===null||g.pick[m]===undefined;
+  return g.turn===m;
+}
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const randCfg=(id,r)=>{const c={};(OPTS[id]||[]).forEach(o=>{c[o.k]=o.v[Math.floor((r||Math.random)()*o.v.length)][0]});return c};
+const cfgText=(id,cfg)=>(OPTS[id]||[]).map(o=>{const v=o.v.find(x=>x[0]===(cfg||{})[o.k]);return v?o.t+': '+v[1]:''}).filter(Boolean).join(' · ');
+/* Sfida del giorno: due giochi con regole a caso, uguali per tutti e due (dipendono solo dalla data) */
+const DAILY_POOL=[['c4','tris','mem'],['arch','golf']];
+function dailyChallenges(date){
+  const r=mulberry(DU.dnum(date)*7919+13);
+  return DAILY_POOL.map(pool=>{const id=pool[Math.floor(r()*pool.length)];return {id:id,cfg:randCfg(id,r),gid:'sd'+date.replace(/-/g,'')+id,date:date}});
+}
+function startDaily(date,id){
+  const c=dailyChallenges(date).find(x=>x.id===id); if(!c)return;
+  if(DU.games()[c.gid]){DU.openGame(c.gid);return}
+  const r=mulberry(DU.dnum(date)*31+id.length*7);
+  startGame(id,'rom',c.cfg,{id:c.gid,rnd:n=>Math.floor(r()*n),at:DU.dnum(date)*864e5+43200000});
+}
 
 /* ---------- Impostazioni di ogni gioco ---------- */
 const OPTS={
@@ -36,6 +61,8 @@ const OPTS={
  q20:[
   {k:'n',t:'Quante domande',v:[[10,'10'],[20,'20 (classico)'],[30,'30']],d:1},
   {k:'cat',t:'Cosa si deve indovinare',v:[['any','Qualsiasi cosa'],['animale','Un animale'],['oggetto','Un oggetto'],['persona','Una persona'],['luogo','Un luogo'],['cibo','Un cibo']],d:0,h:'Chi pensa sceglie un segreto di questo tipo e lo scrive: l\'altro lo vede solo alla fine.'}],
+ obv:[
+  {k:'lv',t:'Livello',v:[[1,'Piccante'],[2,'Esplicito'],[3,'Molto esplicito']],d:1,h:'Le carte arrivano fino al livello scelto. Si può sempre dire "passo": nessun obbligo, mai.'}],
  tris:[
   {k:'sz',t:'Griglia',v:[[3,'Classica 3×3 (tre in fila)'],[5,'Grande 5×5 (quattro in fila)']],d:0}],
  mem:[
@@ -47,7 +74,8 @@ const OPTS={
 };
 const defCfg=id=>{const c={};(OPTS[id]||[]).forEach(o=>{c[o.k]=o.v[o.d][0]});return c};
 const FLEETS={s:{size:6,lens:[3,2,2]},m:{size:8,lens:[4,3,3,2,2]},l:{size:10,lens:[5,4,3,3,2]}};
-const NAMEOF={q20:'20 domande',tris:'Tris',mem:'Memory',c4:'Forza 4',bs:'Battaglia navale',arch:'Tiro con l\'arco',golf:'Mini golf'};
+OPTS.dadi=[{k:'lv',t:'Livello',v:[[1,'Sensuale'],[2,'Spinto'],[3,'Senza limiti']],d:1,h:'Il dado dice cosa fare, dove e come. Chi tira lo fa all\'altro/a. Si può sempre dire stop.'}];
+const NAMEOF={obv:'Obbligo o verità',dadi:'Dadi del desiderio',q20:'20 domande',tris:'Tris',mem:'Memory',c4:'Forza 4',bs:'Battaglia navale',arch:'Tiro con l\'arco',golf:'Mini golf'};
 
 function finish(n,w){
   n.w=w; n.peg=pick(D.PEGNI[n.th==='hot'?'hot':'rom']);
@@ -58,7 +86,7 @@ function endBlock(g,detail){
   const head=g.w==='D'?'Pareggio':'Ha vinto '+esc(nm(g.w));
   return `<div class="win"><p class="eyebrow">Partita finita</p><h3>${head}</h3>${detail?`<p>${detail}</p>`:''}
    <p><b>Pegno:</b> ${esc(g.peg||'')}</p>
-   <div class="actions">${g.saved?'':'<button class="btn sm" data-act="g-tl">Salva nella timeline</button>'}<button class="btn sm ghost" data-act="g-again">Rigioca</button><button class="btn sm ghost" data-act="g-quit">Menu giochi</button></div></div>`;
+   <div class="actions">${g.saved?'':'<button class="btn sm" data-act="g-tl">Salva nella timeline</button>'}<button class="btn sm ghost" data-act="g-again">Rigioca</button><button class="btn sm ghost" data-act="g-close">Chiudi la partita</button></div></div>`;
 }
 function statusLine(g){
   if(g.w)return '';
@@ -72,9 +100,11 @@ function openSetup(id,th,cfg){
   if(!OPTS[id]){startGame(id,th,{});return}
   S.gset={g:id,th:th,cfg:Object.assign(defCfg(id),cfg||{})}; DU.render(true);
 }
-function startGame(id,th,cfg){
+function startGame(id,th,cfg,x){
   if(th==='hot'&&!DU.hotOn()){DU.toast('Servono il sì di tutti e due, nella sezione Noi.');return}
-  const g={type:id,th:th,cfg:cfg||{},turn:pick(['A','B']),w:null,at:Date.now(),saved:false};
+  const rnd=(x&&x.rnd)||rndG, pick=a=>a[rnd(a.length)];
+  const g={type:id,th:th,cfg:cfg||{},turn:pick(['A','B']),w:null,at:(x&&x.at)||Date.now(),saved:false};
+  if(x&&x.id)g.id=x.id;
   if(id==='c4'){const d=c4dims(g);g.b=Array(d.C*d.R).fill('');g.mv=0}
   else if(id==='bs'){const f=FLEETS[g.cfg.fleet||'m'];g.size=f.size;g.lens=f.lens;g.ships={A:null,B:null};g.ready={A:false,B:false};g.shots={A:[],B:[]};g.phase='place';g.turn='A';S.bsp=null;S.bsel=null}
   else if(id==='ic'){
@@ -96,6 +126,8 @@ function startGame(id,th,cfg){
     g.cards=c;g.open=[];g.mo=Array(c.length).fill('');g.pc={A:0,B:0}
   }
   else if(id==='arch'||id==='golf'){g.s={A:null,B:null};g.seed=1+rnd(1e9);delete g.turn}
+  else if(id==='obv'){g.lv=+(g.cfg.lv||2);g.phase='choose';g.card=null;g.n=0;g.seen=[]}
+  else if(id==='dadi'){g.lv=+(g.cfg.lv||2);g.roll=null;g.n=0}
   S.gset=null;
   DU.saveGame(g);
   if(S.mode==='local'&&g.turn&&!ginfo(id).hidden)DU.setActive(g.turn);
@@ -471,7 +503,7 @@ function endPlay(score){
       finish(n,a===b?'D':(p.g==='arch'?(a>b?'A':'B'):(a<b?'A':'B')));
     }
     return n;
-  });
+  },p.id);
 }
 function heartPath(c,x,y,s){
   c.beginPath(); c.moveTo(x,y+s*.3);
@@ -731,6 +763,82 @@ function mountGolf(cv,th,cfg,seed){
   requestAnimationFrame(frame);
 }
 
+
+/* ---------- Obbligo o verità (solo hot) ---------- */
+function obvDraw(g,kind){
+  const L=kind==='o'?D.OBV.d:D.OBV.t, pool=[];
+  L.forEach((x,i)=>{if(x[0]<=g.lv&&(g.seen||[]).indexOf(kind+i)<0)pool.push(i)});
+  const all=pool.length?pool:L.map((x,i)=>i).filter(i=>L[i][0]<=g.lv), i=pick(all);
+  return {k:kind,t:L[i][1],i:kind+i};
+}
+function obvPick(kind){
+  const g=S.game; if(!g||g.type!=='obv'||g.phase!=='choose'||!actorOK(g))return;
+  const n=clone(g), c=obvDraw(g,kind); n.card=c; n.phase='do'; n.seen=(g.seen||[]).concat(c.i).slice(-80);
+  DU.saveGame(n);
+}
+function obvNext(skip){
+  const g=S.game; if(!g||g.type!=='obv'||g.phase!=='do'||!actorOK(g))return;
+  const n=clone(g); n.n=(g.n||0)+(skip?0:1); n.phase='choose'; n.card=null; n.turn=other(g.turn);
+  DU.saveGame(n); if(S.mode==='local')DU.setActive(n.turn);
+}
+function obvHTML(g){
+  const mine=actorOK(g), lv=['','Piccante','Esplicito','Molto esplicito'][g.lv||2];
+  let body;
+  if(g.phase==='choose'){
+    body=mine?`<p class="lead" style="font-size:18px;text-align:center">Scegli: obbligo o verità?</p>
+     <div class="actions" style="justify-content:center"><button class="btn" data-act="g-obv" data-k="v">Verità</button><button class="btn" data-act="g-obv" data-k="o">Obbligo</button></div>`
+     :`<p class="note" style="text-align:center">${esc(nm(g.turn))} sta scegliendo tra obbligo e verità…</p>`;
+  }else{
+    const c=g.card||{k:'v',t:''};
+    body=`<div class="card" style="text-align:center;border:2px solid var(--btn)"><p class="eyebrow">${c.k==='o'?'Obbligo':'Verità'} per ${esc(nm(g.turn))}</p><h3 class="qtext" style="margin-top:8px">${esc(c.t)}</h3></div>
+     ${mine?`<div class="actions" style="justify-content:center"><button class="btn" data-act="g-obvdone">Fatto ✓</button><button class="btn ghost" data-act="g-obvskip">Passo</button></div>`:`<p class="note" style="text-align:center">Aspettiamo che ${esc(nm(g.turn))} risponda o lo faccia.</p>`}`;
+  }
+  return `${statusLine(g)}<p class="note">Livello: <b>${lv}</b> · carte giocate: ${g.n||0}. Si può sempre dire "passo": niente è obbligatorio davvero.</p>${body}
+   <div class="actions"><button class="btn ghost sm" data-act="g-close">Chiudi la partita</button></div>`;
+}
+/* ---------- Dadi del desiderio (solo hot) ---------- */
+function dadiRoll(){
+  const g=S.game; if(!g||g.type!=='dadi'||!actorOK(g))return;
+  const f=L=>{const a=L.filter(x=>x[0]<=g.lv);const w=a.filter(x=>x[0]===g.lv).concat(a);return pick(w)[1]};
+  const n=clone(g); n.roll={a:f(D.DADI.act),z:f(D.DADI.zone),h:f(D.DADI.how),by:g.turn}; DU.saveGame(n);
+}
+function dadiDone(){
+  const g=S.game; if(!g||g.type!=='dadi'||!actorOK(g))return;
+  const n=clone(g); n.n=(g.n||0)+1; n.roll=null; n.turn=other(g.turn); DU.saveGame(n); if(S.mode==='local')DU.setActive(n.turn);
+}
+function dadiHTML(g){
+  const mine=actorOK(g), lv=['','Sensuale','Spinto','Senza limiti'][g.lv||2], r=g.roll;
+  const dice=r?`<div class="card" style="text-align:center;border:2px solid var(--btn)"><p class="eyebrow">${esc(nm(r.by))} lo fa a ${esc(nm(other(r.by)))}</p>
+    <h3 class="qtext" style="margin-top:8px">${esc(r.a)} ${esc(r.z)} ${esc(r.h)}</h3></div>`:'';
+  const act=mine?(r?`<div class="actions" style="justify-content:center"><button class="btn" data-act="g-dadidone">Fatto ✓</button><button class="btn ghost" data-act="g-dadiroll">Tira ancora</button></div>`
+     :`<div class="actions" style="justify-content:center"><button class="btn" data-act="g-dadiroll">🎲 Tira i dadi</button></div>`)
+    :`<p class="note" style="text-align:center">${r?'Tocca a '+esc(nm(other(g.turn)))+' lasciarsi andare…':esc(nm(g.turn))+' sta per tirare i dadi.'}</p>`;
+  return `${statusLine(g)}<p class="note">Livello: <b>${lv}</b> · turni fatti: ${g.n||0}. Chi tira è attivo, l'altro/a si gode. "Stop" ferma tutto, sempre.</p>${dice}${act}
+   <div class="actions"><button class="btn ghost sm" data-act="g-close">Chiudi la partita</button></div>`;
+}
+
+/* ---------- Elenco partite ---------- */
+function listHTML(){
+  const gs=Object.values(DU.games()).filter(g=>ginfo(g.type)).sort((a,b)=>(b.at||0)-(a.at||0));
+  if(!gs.length)return '';
+  const m=me(), loc=S.mode==='local';
+  const rows=gs.map(g=>{
+    const i=ginfo(g.type), mine=!loc&&myTurn(g,m);
+    const st=g.w?(g.w==='D'?'Pareggio':'Ha vinto '+nm(g.w)):loc?'In corso':mine?'Tocca a te':'Aspetta '+nm(other(m));
+    return `<div class="gl ${mine?'mine':''}"><button class="glo" data-act="g-open" data-id="${esc(g.id)}"><span class="gico sm">${i.ico}</span><span class="glt"><b>${esc(i.t)}</b> <span class="note">· ${esc(TN[g.th]||'')}</span><br><span class="note ${mine?'mn':''}">${esc(st)}</span></span></button>
+     ${S.gdel===g.id?`<button class="mini warn" data-act="g-del2" data-id="${esc(g.id)}">Sicuro?</button>`:`<button class="mini" data-act="g-del" data-id="${esc(g.id)}">Elimina</button>`}</div>`;
+  }).join('');
+  return `<section class="card"><h3 style="font-size:20px">Partite in corso</h3><p class="note" style="margin:2px 0 8px">Ogni mossa è salvata: potete uscire e tornare quando volete, e giocare più partite insieme.</p><div class="glist">${rows}</div></section>`;
+}
+function dailyHTML2(){
+  const t=DU.todayStr(), games=DU.games();
+  const rows=dailyChallenges(t).map(c=>{
+    const g=games[c.gid], i=ginfo(c.id), mine=g&&S.mode!=='local'&&myTurn(g,me());
+    return `<button class="glo dcg" data-act="g-daily" data-id="${c.id}"><span class="gico sm">${i.ico}</span><span class="glt"><b>${esc(i.t)}</b><br><span class="note">${esc(cfgText(c.id,c.cfg))}</span></span><span class="go2">${g?(g.w?'Finita':mine?'Tocca a te':'Continua'):'Sfida'}</span></button>`;
+  }).join('');
+  return `<section class="card"><h3 style="font-size:20px">Sfida del giorno</h3><p class="note" style="margin:2px 0 8px">Due giochi con regole scelte a caso, uguali per tutti e due. Cambiano ogni giorno.</p><div class="glist">${rows}</div></section>`;
+}
+
 /* ---------- Viste ---------- */
 function menuHTML(){
   const sc=S.scores||{A:0,B:0}, on=DU.hotOn();
@@ -740,14 +848,15 @@ function menuHTML(){
   const rows=GAMES.map(g=>{const x=Object.assign({A:0,B:0,D:0},gs[g.id]), pl=x.A+x.B+x.D;return `<tr><td>${esc(g.t)}${pl?`<small>${x.A===x.B?'sono pari':'vince di più '+lead(x)}</small>`:''}</td><td class="n">${x.A}</td><td class="n">${x.B}</td><td class="n">${x.D}</td><td class="r">${pl?rbtn(g.id):''}</td></tr>`}).join('');
   const board=`<section class="card score"><button class="sbh" data-act="g-sb" aria-expanded="${open}"><span><b>Classifica</b><br><span class="note">${tot.A+tot.B===0?'nessuna vittoria ancora':'in testa: '+lead(tot)+' · '+tot.A+' a '+tot.B}</span></span><span class="chev">${open?'▲':'▼'}</span></button>
    ${open?`<table class="sb"><thead><tr><th>Gioco</th><th class="n"><i class="dot"></i>${esc(nm('A'))}</th><th class="n"><i class="dot B"></i>${esc(nm('B'))}</th><th class="n">Pari</th><th></th></tr></thead><tbody>${rows}<tr class="tt"><td>Totale<small>${tot.A===tot.B?'sono pari':'vince di più '+lead(tot)}</small></td><td class="n">${tot.A}</td><td class="n">${tot.B}</td><td class="n">${sc.D||0}</td><td class="r">${tot.A+tot.B+(sc.D||0)?rbtn('all'):''}</td></tr></tbody></table>`:''}</section>`;
-  const cards=GAMES.map(g=>{
-    const btns=`<button class="btn sm" data-act="g-new" data-g="${g.id}" data-th="rom">${hs('hk')}Romantico</button>
-      <button class="btn sm ghost" data-act="g-new" data-g="${g.id}" data-th="hot" ${on?'':'aria-disabled="true" style="opacity:.55"'}>${on?'Hot':'Hot (bloccato)'}</button>
-      ${g.id==='ic'?'<button class="btn sm ghost" data-act="g-new" data-g="ic" data-th="ric">Ricordi nostri</button>':''}`;
+  const cards=GAMES.filter(g=>!g.hotOnly||on).map(g=>{
+    const btns=(g.hotOnly?'':`<button class="btn sm" data-act="g-new" data-g="${g.id}" data-th="rom">${hs('hk')}Romantico</button>`)+
+      `<button class="btn sm ${g.hotOnly?'':'ghost'}" data-act="g-new" data-g="${g.id}" data-th="hot" ${on?'':'aria-disabled="true" style="opacity:.55"'}>${on?'Hot':'Hot (bloccato)'}</button>`+
+      (g.id==='ic'?'<button class="btn sm ghost" data-act="g-new" data-g="ic" data-th="ric">Ricordi nostri</button>':'')+
+      (OPTS[g.id]&&!g.hotOnly?`<button class="btn sm ghost" data-act="g-rand" data-g="${g.id}" aria-label="Partita a sorpresa">🎲 A sorpresa</button>`:'');
     return `<article class="card gcard" style="--g1:${g.gr.split(',')[0]};--g2:${g.gr.split(',')[1]}"><div class="gh"><span class="gico">${g.ico}</span><div><h3>${esc(g.t)}</h3><p class="sub">${esc(g.b)}</p></div></div><div class="actions" style="margin-top:2px">${btns}</div></article>`;
   }).join('');
   return `<div class="top"><h2 class="h2">Giochi</h2><span class="chip"><i class="dot"></i>${sc.A||0} · <i class="dot B"></i>${sc.B||0}</span></div>
-   ${board}<p class="note" style="margin-top:-8px">Sfidatevi: chi vince sceglie il pegno. Prima di ogni partita scegliete le regole. Il risultato si può salvare nella timeline. Le versioni hot si sbloccano quando lo vogliono entrambi (sezione Noi).</p>${cards}`;
+   ${listHTML()}${dailyHTML2()}${board}<p class="note" style="margin-top:-8px">Sfidatevi: chi vince sceglie il pegno. Potete giocare più partite insieme: ogni mossa resta salvata. "A sorpresa" sceglie le regole a caso. Le versioni hot (e i giochi Obbligo o verità e Dadi del desiderio) si sbloccano quando lo vogliono entrambi (sezione Noi).</p>${cards}`;
 }
 function setupHTML(){
   const s=S.gset, info=ginfo(s.g), hot=s.th==='hot';
@@ -759,7 +868,7 @@ function setupHTML(){
 function gateHTML(g){
   return `<section class="card" style="text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center">
    <p class="eyebrow">Informazioni nascoste</p><h3 style="font-size:24px">Passa il telefono a ${esc(nm(g.turn))}</h3>
-   <button class="btn" data-act="g-gate">Sono ${esc(nm(g.turn))}</button><button class="link" data-act="g-quit">Abbandona la partita</button></section>`;
+   <button class="btn" data-act="g-gate">Sono ${esc(nm(g.turn))}</button><button class="link" data-act="g-back">Indietro</button></section>`;
 }
 function playHTML(){
   const p=S.play, tt=p.g==='arch'?'Tiro con l\'arco':'Mini golf';
@@ -783,18 +892,30 @@ function render(){
   else if(g.type==='mem')body=memHTML(g);
   else if(g.type==='bs')body=bsHTML(g);
   else if(g.type==='ic')body=icHTML(g);
+  else if(g.type==='obv')body=obvHTML(g);
+  else if(g.type==='dadi')body=dadiHTML(g);
   else if(g.type==='arch')body=scoreHTML(g,'punti',`${cf.n||5} frecce a testa${cf.wind?', con vento':''}${cf.mov?' e bersaglio mobile':''}. Tocca e trascina: il mirino segue il dito (sta un po' sopra, così lo vedi). Rilascia per tirare. Il vento sposta la freccia: compensa. Lo stesso vento per tutti e due.`);
   else body=scoreHTML(g,'colpi',`${cf.holes||3} buche${cf.bump?' con bumper':''}, stesso percorso per tutti e due. Trascina all'indietro dalla pallina e rilascia: vince chi tira meno.`);
-  return `<div class="top"><h2 class="h2">${esc(info.t)}</h2><span class="chip">${esc(TN[g.th]||'')}</span></div>${body}
-   ${g.w?'':'<div class="actions"><button class="btn ghost sm" data-act="g-quit">Abbandona</button></div>'}`;
+  return `<div class="top"><button class="btn ghost sm" data-act="g-back" aria-label="Torna alle partite">← Indietro</button><span class="chip">${esc(info.t)} · ${esc(TN[g.th]||'')}</span></div>${body}`;
 }
 function click(act,t){
   if(act==='g-new'){openSetup(t.dataset.g,t.dataset.th);return true}
   if(act==='g-opt'){const o=OPTS[S.gset.g].find(x=>x.k===t.dataset.k);if(o){S.gset.cfg[o.k]=o.v[+t.dataset.i][0]}DU.render(true);return true}
   if(act==='g-start'){const s=S.gset;if(s)startGame(s.g,s.th,s.cfg);return true}
   if(act==='g-setback'){S.gset=null;DU.render(true);return true}
-  if(act==='g-quit'){S.gset=null;S.play=null;S.freeze=false;S.bsp=null;S.bsel=null;DU.clearGame();return true}
-  if(act==='g-again'){const g=S.game;if(g){DU.clearGame();openSetup(g.type,g.th,g.cfg)}return true}
+  if(act==='g-back'){S.gset=null;S.play=null;S.freeze=false;S.pend=null;DU.openGame(null);return true}
+  if(act==='g-close'||act==='g-quit'){S.gset=null;S.play=null;S.freeze=false;S.bsp=null;S.bsel=null;S.pend=null;DU.clearGame();return true}
+  if(act==='g-open'){S.gdel=null;S.pend=null;DU.openGame(t.dataset.id);return true}
+  if(act==='g-del'){S.gdel=t.dataset.id;DU.render(true);return true}
+  if(act==='g-del2'){S.gdel=null;DU.clearGame(t.dataset.id);return true}
+  if(act==='g-daily'){startDaily(DU.todayStr(),t.dataset.id);return true}
+  if(act==='g-rand'){const id=t.dataset.g,cfg=randCfg(id);DU.toast('Regole a sorpresa: '+cfgText(id,cfg));startGame(id,'rom',cfg);return true}
+  if(act==='g-obv'){obvPick(t.dataset.k);return true}
+  if(act==='g-obvdone'){obvNext(false);return true}
+  if(act==='g-obvskip'){obvNext(true);return true}
+  if(act==='g-dadiroll'){dadiRoll();return true}
+  if(act==='g-dadidone'){dadiDone();return true}
+  if(act==='g-again'){const g=S.game;if(g){const ty=g.type,th=g.th,cf=g.cfg;DU.clearGame();openSetup(ty,th,cf)}return true}
   if(act==='g-q20set'){q20Set();return true}
   if(act==='g-q20ask'){q20Ask(false);return true}
   if(act==='g-q20guess'){q20Ask(true);return true}
@@ -827,7 +948,7 @@ function click(act,t){
   if(act==='g-gate'){DU.setActive(S.game.turn);return true}
   if(act==='g-play'){
     const g=S.game; if(!g)return true;
-    S.play={g:g.type,th:g.th,slot:t.dataset.s}; S.freeze=true; DU.render(true); return true;
+    S.play={g:g.type,th:g.th,slot:t.dataset.s,id:g.id}; S.freeze=true; DU.render(true); return true;
   }
   if(act==='g-stop'){S.play=null;S.freeze=false;DU.rq();return true}
   if(act==='g-tl'){
@@ -845,6 +966,6 @@ function mount(){
   const cf=S.game.cfg||{}, sd=S.game.seed||1;
   if(S.play.g==='arch')mountArch(cv,S.play.th,cf,sd); else mountGolf(cv,S.play.th,cf,sd);
 }
-return {render:render,click:click,mount:mount};
+return {render:render,click:click,mount:mount,myTurn:myTurn,dailyChallenges:dailyChallenges,cfgText:cfgText,ginfo:ginfo};
 };
 })();

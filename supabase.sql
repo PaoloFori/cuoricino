@@ -92,3 +92,29 @@ end $$;
 grant execute on function create_couple() to authenticated;
 grant execute on function join_couple(text) to authenticated;
 grant execute on function make_device_code() to authenticated;
+
+-- ===== Notifiche push (versione 11) =====
+create table if not exists push_subs (
+  uid uuid primary key,
+  couple uuid references couples(id) on delete cascade,
+  sub jsonb not null,
+  updated_at timestamptz default now()
+);
+alter table push_subs enable row level security;
+-- nessuna policy: la tabella si usa solo con queste due funzioni e con la funzione "push" del server
+
+create or replace function save_push(s jsonb) returns void language plpgsql security definer set search_path = public as $$
+declare cid uuid;
+begin
+  if auth.uid() is null then raise exception 'non autenticato'; end if;
+  select couple into cid from members where uid = auth.uid() limit 1;
+  if cid is null then raise exception 'nessuna coppia'; end if;
+  insert into push_subs(uid, couple, sub) values (auth.uid(), cid, s)
+  on conflict (uid) do update set couple = excluded.couple, sub = excluded.sub, updated_at = now();
+end $$;
+
+create or replace function drop_push() returns void language plpgsql security definer set search_path = public as $$
+begin delete from push_subs where uid = auth.uid(); end $$;
+
+grant execute on function save_push(jsonb) to authenticated;
+grant execute on function drop_push() to authenticated;

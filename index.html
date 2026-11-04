@@ -21,7 +21,18 @@ button{-webkit-touch-callout:none}
 #nav .in{max-width:calc(100% - 24px)}
 #nav button{width:clamp(46px,16vw,56px)}
 @media (max-width:360px){#app{gap:12px}.h2{font-size:24px}.btn{padding:0 14px}.stat b{font-size:28px}}
-img{-webkit-user-drag:none}</style>
+img{-webkit-user-drag:none}
+/* Elenco partite e sfida del giorno */
+.glist{display:flex;flex-direction:column;gap:8px}
+.gl{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 6px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface)}
+.gl.mine{border-color:var(--btn);background:var(--a-soft)}
+.glo{flex:1;min-width:0;display:flex;align-items:center;gap:12px;text-align:left;background:none;border:0;padding:4px;color:var(--ink);font:inherit;cursor:pointer;min-height:52px}
+.glo.dcg{border:1.5px solid var(--line);border-radius:16px;background:var(--surface);padding:6px 12px 6px 6px;width:100%}
+.glt{flex:1;min-width:0;line-height:1.25}
+.gico.sm{width:42px;height:42px;font-size:22px;border-radius:13px}
+.note.mn{color:var(--btn);font-weight:700}
+.go2{flex:none;font:800 12px var(--body);letter-spacing:.04em;text-transform:uppercase;color:var(--btn)}
+</style>
 <script>if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </head>
 <body>

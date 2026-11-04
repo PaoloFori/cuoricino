@@ -65,3 +65,19 @@ Note:
 - Resoconto del mese: da novembre 2026 ha un numero variabile di domande (da 6 a 9, 3 fisse + da 3 a 6 scelte dal mese) e il pool passa da 20 a 45 domande su com'è andato il mese.
 - Traguardi: tolti i doppioni ("365 giorni" e "1 anno" lo stesso giorno); restano i traguardi in giorni e gli anniversari in anni.
 - Telefono: tocchi senza ritardo né zoom al doppio tocco, altezza corretta con la barra del browser, barra in basso più adattabile sugli schermi stretti.
+
+## Novità versione 11
+- **Partite salvate:** ogni mossa resta nel server. Dalla partita c'è "← Indietro" (non serve più abbandonare) e in Giochi compare "Partite in corso", con "Tocca a te". Si possono giocare più partite insieme; "Elimina" le toglie.
+- **Sfida del giorno:** due giochi con regole scelte a caso ma uguali per tutti e due, diversi ogni giorno. Su ogni gioco c'è anche "🎲 A sorpresa" (regole a caso).
+- **Attività del giorno:** dal 5 novembre 2026 le tre carte diventano una sola con 3 domande (racconto libero, scelta multipla, racconto libero), su qualsiasi argomento. La "Conversazione 18+" resta a parte e si sblocca dopo.
+- **Hot più spinto:** nuova sottocategoria "Senza filtri" (63 domande esplicite), un quiz "Senza filtri", due giochi solo hot (Obbligo o verità e Dadi del desiderio, tre livelli) e pegni più spinti. Nel mazzo hot e nel quiz rapido una domanda su tre è "senza filtri". Tutto resta bloccato finché non dicono sì tutti e due.
+- **Notifiche vere** (anche con l'app chiusa): ore 8 promemoria, ore 20 sollecito se non hai finito (e ti dice se il partner ha già fatto), avviso quando il partner finisce le attività, e "tocca a te" nei giochi. Serve la configurazione qui sotto.
+
+### Attivare le notifiche (una volta sola)
+1. In Supabase, SQL Editor: incolla di nuovo tutto `supabase.sql` e premi Run (è sicuro rifarlo: aggiunge solo le tabelle delle notifiche).
+2. Edge Functions > Deploy a new function > "Via Editor". Nome: `push`. Incolla tutto il contenuto di `supabase/functions/push/index.ts` e premi Deploy.
+3. Aprila, vai in Details e **spegni "Verify JWT"** (il controllo lo fa già la funzione), poi salva.
+4. Edge Functions > Secrets: aggiungi i tre valori che trovi nel file `push-secrets.txt` (VAPID_PUBLIC, VAPID_PRIVATE, CRON_SECRET). Quel file non va caricato su GitHub (è già escluso).
+5. SQL Editor: apri `supabase-notifiche.sql`, sostituisci `PASTE_CRON_SECRET` con il valore di CRON_SECRET e premi Run. Se dice che pg_cron o pg_net non sono attive, abilitale in Database > Extensions e rifai Run.
+6. Carica il progetto su GitHub (`config.js` ha già la chiave pubblica `vapid`).
+7. Su **ogni telefono**: Noi > Avvisi, attiva l'interruttore e accetta il permesso. Su iPhone l'app deve essere nella schermata Home (iOS 16.4 o più recente) e va aperta da lì.

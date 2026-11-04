@@ -5,7 +5,7 @@ const D=window.DUC, DECK=D.DECK, ALLPACKS=D.PACKS.concat(D.HOTPACKS), CITIES=D.C
 
 /* ---------- Stato ---------- */
 const S={mode:'boot',profile:null,answers:{A:{},B:{}},slot:null,active:'A',tab:'home',view:null,
-  draw:null,deckCat:'all',quick:null,quickN:10,quickHot:false,game:null,scores:{A:0,B:0},play:null,freeze:false,
+  draw:null,deckCat:'all',quick:null,quickN:10,quickHot:false,game:null,games:{},gopen:null,gdel:null,scores:{A:0,B:0},play:null,freeze:false,
   photos:[],events:[],stories:[],custom:[],chat:[],pcat:'all',full:{},photoView:null,confirmDel:false,confirmReset:false,
   canWrite:true,loadedP:false,slow:false,err:null,uid:null,dirty:false,photosOk:true,
   slots:{},loadedS:false,welcome:null,cloudOn:false,notifOn:false,geoOn:false,rtab:'time',ev:null,cq:null,st:'',nt:'',pickKind:null,storyTxt:'',icElim:null,icGuess:false};
@@ -16,7 +16,7 @@ const lset=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 S.notifOn=lget('sint-notif')==='1'; S.geoOn=lget('sint-geo')!=='0';
 function lsLoad(){try{return JSON.parse(localStorage.getItem(LS))||mem.v||null}catch(e){return mem.v||null}}
 function lsSave(){
-  const v={profile:S.profile,answers:S.answers,active:S.active,draw:S.draw,quick:S.quick,game:S.game,scores:S.scores};
+  const v={profile:S.profile,answers:S.answers,active:S.active,draw:S.draw,quick:S.quick,games:S.games,scores:S.scores};
   mem.v=v; try{localStorage.setItem(LS,JSON.stringify(v))}catch(e){}
 }
 
@@ -74,8 +74,10 @@ function saveMine(fields){
   return true;
 }
 const saveAns=(key,val)=>{
+  const t0=todayStr(), was=S.slot?dayDone(S.slot,t0):true;
   const ok=saveMine({[key]:val});
-  if(ok&&/^(d\d{4}-|mr\d{6}q)/.test(key)){const m=me(),st=streak();if(st>(+(S.answers[m]||{}).maxst||0))saveMine({maxst:st})}
+  if(ok&&S.mode==='shared'&&S.slot&&!was&&dayDone(S.slot,t0))PUSH.daily();
+  if(ok&&/^(d\d{4}-|dy\d{4}-|mr\d{6}q)/.test(key)){const m=me(),st=streak();if(st>(+(S.answers[m]||{}).maxst||0))saveMine({maxst:st})}
   return ok;
 };
 
@@ -220,6 +222,11 @@ function customItem(c){return {key:'c'+c.id,t:c.t,o:(c.o&&c.o.length>=2)?c.o:nul
 const IDX={d:[],w:[],x:[]};
 DECK.forEach((q,i)=>{if(i>=(D.BASE_N||DECK.length))return;if(q.hot)IDX.x.push(i);else if(q.who)IDX.w.push(i);else IDX.d.push(i)}); /* le giornaliere restano sulle domande originali: cambiare l'elenco sposterebbe le domande già risposte */
 function dailyItem(k,date){
+  if(k==='x'&&isNewDay(date)){
+    /* Conversazione 18+: una volta su tre arriva dalle domande senza filtri */
+    const n=dnum(date), l=(n%3===0&&DP.xxx.length)?DP.xxx:DP.hot, it=deckItem(l[Math.floor(n/3)*7%l.length]);
+    it.key='x'+date; return it;
+  }
   const l=IDX[k], idx=l[(dnum(date)+(k==='w'?7:k==='x'?3:0))%l.length], it=deckItem(idx);
   it.key=k+date; return it;
 }
@@ -232,9 +239,27 @@ function recapItems(ym){
   for(let i=rest.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[rest[i],rest[j]]=[rest[j],rest[i]]}
   return fx.concat(rest.slice(0,extra)).map((x,n)=>({key:'mr'+ym.replace('-','')+'q'+n,t:x[0].t,o:x[0].o,hot:false}));
 }
-const dayDone=(slot,d)=>isMonthEnd(d)?recapItems(d.slice(0,7)).every(it=>done(ans(slot,it.key))):done(ans(slot,'d'+d));
+/* Attività del giorno: dal 5 novembre 2026 una sola carta con 3 domande (racconto libero, scelta multipla, racconto libero).
+   I giorni precedenti restano com'erano, così risposte e serie non cambiano. */
+const DAY_NEW='2026-11-05';
+const isNewDay=d=>d>=DAY_NEW;
+const DP={open:[],multi:[],hot:[],xxx:[]};
+DECK.forEach((q,i)=>{
+  if(q.hot){(q.sub==='xxx'?DP.xxx:DP.hot).push(i);return}
+  if(q.who||q.t==='Preferisci…')return;
+  if(!q.o)DP.open.push(i); else if(q.o.length>=3)DP.multi.push(i);
+});
+function dayItems(date){
+  const n=dnum(date), k='dy'+date;
+  const T=D.TALK||[], mi=DP.multi[(n*7+3)%DP.multi.length], oi=DP.open[(n*11+5)%DP.open.length];
+  return [{key:k+'q0',t:T[n%T.length],o:null,hot:false},
+          {key:k+'q1',t:DECK[mi].t,o:optsOfQ(DECK[mi]),hot:false},
+          {key:k+'q2',t:DECK[oi].t,o:null,hot:false}];
+}
+const dayDone=(slot,d)=>isMonthEnd(d)?recapItems(d.slice(0,7)).every(it=>done(ans(slot,it.key))):isNewDay(d)?dayItems(d).every(it=>done(ans(slot,it.key))):done(ans(slot,'d'+d));
 function srcOf(src){
   if(src.indexOf('month:')===0)return {title:'Resoconto del mese',items:recapItems(src.slice(6))};
+  if(src.indexOf('day:')===0)return {title:'Attività del giorno',items:dayItems(src.slice(4))};
   if(src.indexOf('special:')===0)return spItems(src);
   if(src==='quick')return {title:'Quiz rapido',items:(S.quick&&S.quick.ids||[]).filter(i=>DECK[i]).map(deckItem)};
   const p=ALLPACKS.find(x=>'pack:'+x.id===src);
@@ -247,7 +272,7 @@ function streak(){
   let n=0; while(n<400&&both(d)){n++;d=addDays(d,-1)}
   return n;
 }
-const DCATS=[['all','Tutte'],['know','Conoscersi'],['fun','Divertenti'],['light','Innocue'],['curio','Curiosità'],['love','Romantiche'],['trip','Viaggi'],['food','Cibo'],['future','Futuro'],['past','Passato'],['pop','Cultura pop'],['deep','Profonde'],['work','Lavoro e studio'],['family','Famiglia e amici'],['body','Sport e benessere'],['nature','Natura e animali'],['dream','Sogni e fantasia'],['values','Valori'],['home','Casa e routine'],['tech','Tecnologia'],['money','Soldi e progetti'],['quirk','Manie e abitudini'],['child','Infanzia'],['conflict','Fiducia e litigi'],['hot','Hot 18+ · tutte'],['hot-flirt','Hot · Flirt e seduzione'],['hot-fant','Hot · Fantasie'],['hot-int','Hot · Intimità'],['hot-spicy','Hot · Piccanti']];
+const DCATS=[['all','Tutte'],['know','Conoscersi'],['fun','Divertenti'],['light','Innocue'],['curio','Curiosità'],['love','Romantiche'],['trip','Viaggi'],['food','Cibo'],['future','Futuro'],['past','Passato'],['pop','Cultura pop'],['deep','Profonde'],['work','Lavoro e studio'],['family','Famiglia e amici'],['body','Sport e benessere'],['nature','Natura e animali'],['dream','Sogni e fantasia'],['values','Valori'],['home','Casa e routine'],['tech','Tecnologia'],['money','Soldi e progetti'],['quirk','Manie e abitudini'],['child','Infanzia'],['conflict','Fiducia e litigi'],['hot','Hot 18+ · tutte'],['hot-flirt','Hot · Flirt e seduzione'],['hot-fant','Hot · Fantasie'],['hot-int','Hot · Intimità'],['hot-spicy','Hot · Piccanti'],['hot-xxx','Hot · Senza filtri']];
 const isHot=c=>c==='hot'||(typeof c==='string'&&c.indexOf('hot-')===0);
 const dcatName=c=>(DCATS.find(x=>x[0]===c)||['','Tutte'])[1];
 function allowedDeck(cat){
@@ -261,7 +286,8 @@ function allowedDeck(cat){
 const validDraw=v=>typeof v==='number'?(DECK[v]?v:null):(typeof v==='string'&&v[0]==='c'&&v.length>1?v:null);
 function customPool(cat){return S.custom.filter(c=>isHot(cat)?(c.hot&&hotOn()&&cat==='hot'):(!c.hot&&(cat==='all'||c.cat===cat))).map(c=>'c'+c.id)}
 function drawNext(cat){
-  const pool0=allowedDeck(cat).concat(customPool(cat)); if(!pool0.length)return null;
+  let pool0=allowedDeck(cat).concat(customPool(cat)); if(!pool0.length)return null;
+  if(cat==='hot'&&Math.random()<1/3){const x=pool0.filter(i=>typeof i==='number'&&DECK[i]&&DECK[i].sub==='xxx'); if(x.length)pool0=x}
   const dn=i=>{const k=typeof i==='number'?'k'+i:i;return done(ans('A',k))&&done(ans('B',k))};
   const fresh=pool0.filter(i=>!dn(i));
   let pool=fresh.length?fresh:pool0;
@@ -449,7 +475,7 @@ function reminderHTML(){
   const t=todayStr(), m=me(), o=other(m);
   const mineD=dayDone(m,t), thD=dayDone(o,t); if(mineD&&thD)return '';
   const st=streak();
-  if(!mineD)return `<button class="banner warm" data-act="daily" data-k="d" style="text-align:left;border:0;width:100%;cursor:pointer"><b>${st>0?'Non perdere la serie di '+st+(st===1?' giorno':' giorni'):'Inizia la serie di oggi'}</b><br>Rispondi alla domanda del giorno prima di mezzanotte.</button>`;
+  if(!mineD)return `<button class="banner warm" ${isNewDay(t)&&!isMonthEnd(t)?`data-act="open" data-src="day:${t}"`:'data-act="daily" data-k="d"'} style="text-align:left;border:0;width:100%;cursor:pointer"><b>${st>0?'Non perdere la serie di '+st+(st===1?' giorno':' giorni'):'Inizia la serie di oggi'}</b><br>Fai le attività del giorno prima di mezzanotte.</button>`;
   if(st>0)return `<section class="banner warm"><b>Manca ${esc(nm(o))}</b><br>Appena risponde, la serie di ${st} ${st===1?'giorno continua':'giorni continua'}.</section>`;
   return '';
 }
@@ -458,8 +484,47 @@ function hotBannerHTML(){
   if(th&&!mine)return `<section class="banner warm"><b>${esc(nm(o))} vorrebbe sbloccare i contenuti hot.</b> Ci stai anche tu?<div class="actions" style="margin-top:8px"><button class="btn sm" data-act="hotok">Sì, sblocca</button></div></section>`;
   return '';
 }
+/* ---------- Notifiche push (server: Supabase). Vedi GUIDA.md ---------- */
+const PUSH={
+  last:{},
+  cfg:()=>window.SINTONIA_CFG||{},
+  ok:()=>!!(cloud&&S.cloudOn&&PUSH.cfg().vapid&&'serviceWorker' in navigator&&'PushManager' in window&&typeof Notification!=='undefined'),
+  configured:()=>!!(cloud&&S.cloudOn&&S.mode==='shared'&&PUSH.cfg().vapid),
+  key(k){const b=(k+'='.repeat((4-k.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/'),r=atob(b),a=new Uint8Array(r.length);for(let i=0;i<r.length;i++)a[i]=r.charCodeAt(i);return a},
+  async enable(){
+    const perm=await Notification.requestPermission(); if(perm!=='granted')return 'denied';
+    if(!PUSH.ok())return 'ok';
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:PUSH.key(PUSH.cfg().vapid)});
+    await cloud.rpc('save_push',{s:sub.toJSON()});
+    return 'ok';
+  },
+  async disable(){try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(sub)await sub.unsubscribe();await cloud.rpc('drop_push')}catch(e){}},
+  async sync(){
+    if(!S.notifOn||!PUSH.ok()||Notification.permission!=='granted')return;
+    try{await PUSH.enable();S.pushOn=true}catch(e){}
+  },
+  send(o){if(!PUSH.configured())return; cloud.fn('push',Object.assign({type:'partner'},o)).catch(()=>{})},
+  daily(){
+    if(!PUSH.configured()||!S.slot)return; const t=todayStr(), od=dayDone(other(S.slot),t);
+    PUSH.send({title:nm(S.slot)+' ha fatto le attività di oggi',body:od?'Ora potete guardare le risposte insieme 💗':'Tocca a te: ti bastano pochi minuti.',tag:'daily',url:'./'});
+  },
+  turn(g){
+    if(!PUSH.configured()||!S.slot||!g||!g.id)return;
+    const m=S.slot, o=other(m), info=G.ginfo(g.type); if(!info)return;
+    const sig=[g.turn,g.phase,g.mv,g.n,g.w,g.s&&JSON.stringify(g.s),g.ready&&JSON.stringify(g.ready),g.pick&&JSON.stringify(g.pick),g.log&&g.log.length,g.pc&&JSON.stringify(g.pc),g.roll&&1,g.card&&g.card.i,g.shots&&(g.shots.A.length+'/'+g.shots.B.length)].join('|');
+    if(PUSH.last[g.id]===sig)return; PUSH.last[g.id]=sig;
+    if(g.w){PUSH.send({title:info.ico+' '+info.t,body:'Partita finita: '+(g.w==='D'?'pareggio':'ha vinto '+nm(g.w)),tag:'g'+g.id,url:'./#giochi'});return}
+    if(G.myTurn(g,o)&&!G.myTurn(g,m)){
+      const fresh=!(g.mv||g.n||g.phase==='play');
+      PUSH.send({title:info.ico+' '+info.t,body:nm(m)+(fresh?' ti ha sfidato: tocca a te!':' ha fatto la sua mossa: tocca a te!'),tag:'g'+g.id,url:'./#giochi'});
+    }
+  }
+};
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.go&&S.mode!=='boot'){S.tab=/giochi/.test(e.data.go)?'giochi':'home';S.view=null;S.gopen=null;syncGame();render(true)}});
 function notify(title,body){
-  if(!S.notifOn||typeof Notification==='undefined'||Notification.permission!=='granted')return;
+  if(!S.notifOn||S.pushOn||typeof Notification==='undefined'||Notification.permission!=='granted')return;
   try{
     if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body:body,icon:'icon-192.png',tag:'sintonia'})).catch(()=>{try{new Notification(title,{body:body})}catch(x){}});
     else new Notification(title,{body:body});
@@ -471,7 +536,7 @@ function watchPartner(k,before){
   if(!done(before[key])&&done(now[key])&&!dayDone(S.slot,t0)&&document.hidden)notify(nm(k)+' ha risposto','Tocca a te: rispondi alla domanda del giorno e mantieni la serie.');
 }
 setInterval(()=>{
-  if(!S.notifOn||!me()||new Date().getHours()<19)return;
+  if(!S.notifOn||S.pushOn||!me()||new Date().getHours()<19)return;
   const t=todayStr(); if(dayDone(me(),t)||lget('sint-last')===t)return;
   lset('sint-last',t); notify('Non perdere la serie','Rispondi alla domanda del giorno prima di mezzanotte.');
 },60000);
@@ -511,6 +576,8 @@ function dailyCount(){
   const A=S.answers.A||{}, B=S.answers.B||{}; let n=0;
   Object.keys(A).forEach(k=>{
     if(/^d\d{4}-\d\d-\d\d$/.test(k)&&done(A[k])&&done(B[k]))n++;
+    const dm=/^dy(\d{4}-\d\d-\d\d)q0$/.exec(k);
+    if(dm&&dayItems(dm[1]).every(x=>done(A[x.key])&&done(B[x.key])))n++;
     const m=/^mr(\d{4})(\d\d)q0$/.exec(k);
     if(m){const it=recapItems(m[1]+'-'+m[2]);if(it.every(x=>done(A[x.key])&&done(B[x.key])))n++}
   });
@@ -539,7 +606,20 @@ function dailyCards(){
     const av=['A','B'].map(x=>`<span class="ca2" style="position:relative">${avatarHTML(x,'s')}${prog(it,x)===it.length?'<span class="ckb"><svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5"/></svg></span>':''}</span>`).join('');
     return `<button class="dc c1" data-act="open" data-src="${src}"><div><span class="tg">Fine mese</span><h3>Resoconto<br>del mese</h3></div><div class="ft"><span class="avs">${av}</span><span class="go">${both?'RISULTATI':mine===it.length?'IN ATTESA':mine+'/'+it.length}</span></div></button>`};
   const lockX=!on||!done(ans(m,sw.key));
-  const g=S.game;
+  if(isNewDay(t)){
+    const dsrc='day:'+t, dit=dayItems(t), dm=prog(dit,m), dBoth=dm===dit.length&&prog(dit,other(m))===dit.length;
+    const dav=['A','B'].map(x=>`<span class="ca2" style="position:relative">${avatarHTML(x,'s')}${prog(dit,x)===dit.length?'<span class="ckb"><svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5"/></svg></span>':''}</span>`).join('');
+    const dayCard=`<button class="dc c1" data-act="open" data-src="${dsrc}"><div><span class="tg">Oggi</span><h3>Attività<br>del giorno</h3></div><div class="ft"><span class="avs">${dav}</span><span class="go">${dBoth?'RISULTATI':dm===dit.length?'IN ATTESA':dm+'/'+dit.length}</span></div></button>`;
+    const lockX2=!on||!dayDone(m,t), mine=Object.values(S.games||{}).filter(x=>G.myTurn(x,m)).length;
+    return `<div class="dgrid">
+    ${me_?recapCard():dayCard}
+    ${me_?dayCard:''}
+    ${card('c3','x',sx,'Conversazione','18+',lockX2,on?'prev':'hot')}
+    ${activeSpecials().map(specialCard).join('')}
+    <button class="dc cg" data-tab="giochi"><div><span class="tg">${mine?'Tocca a te':'Sfida del giorno'}</span><h3>Sfida<br>di coppia</h3></div><div class="ft"><span class="avs">${avatarHTML('A','s')}${'<span class="ca2" style="position:relative">'+avatarHTML('B','s')+'</span>'}</span><span class="go">${mine?mine+(mine===1?' PARTITA':' PARTITE'):'GIOCA'}</span></div></button>
+  </div>`;
+  }
+  const g=Object.values(S.games||{}).find(x=>!x.w);
   return `<div class="dgrid">
     ${me_?recapCard():card('c1','d',sd,'Domanda<br>del giorno','',false)}
     ${card('c2','w',sw,'Chi è più<br>probabile?','',lockW,'prev')}
@@ -923,7 +1003,7 @@ function noiHTML(){
   const hot=`<section class="card"><div class="row"><div><h3 style="font-size:20px">Contenuti hot 18+</h3><p class="note">Domande, quiz, giochi e momenti più maliziosi, sempre senza esagerare. Si attivano solo se acconsentono entrambi.</p></div>
    <button class="sw ${ok?'on':''}" role="switch" aria-checked="${ok}" aria-label="Acconsento ai contenuti hot" data-act="hotok"></button></div>
    <p class="note" style="margin-top:10px">${esc(nm(m))}: ${ok?'acconsente':'non ancora'} · ${esc(nm(o))}: ${ook?'acconsente':'non ancora'} · <b>${hotOn()?'Sbloccati':'Bloccati'}</b></p></section>`;
-  const prefs=`<section class="card"><div class="row"><div><h3 style="font-size:20px">Avvisi</h3><p class="note">Ti ricorda la domanda del giorno e ti dice quando l'altro risponde. Funziona finché l'app resta aperta in background.</p></div><button class="sw ${S.notifOn?'on':''}" role="switch" aria-checked="${S.notifOn}" aria-label="Avvisi" data-act="notifon"></button></div>
+  const prefs=`<section class="card"><div class="row"><div><h3 style="font-size:20px">Avvisi</h3><p class="note">Alle 8 ti ricorda le attività del giorno, alle 20 se non le hai fatte, ti dice quando il partner le ha fatte e quando in un gioco tocca a te. Su iPhone serve l'app nella schermata Home.</p></div><button class="sw ${S.notifOn?'on':''}" role="switch" aria-checked="${S.notifOn}" aria-label="Avvisi" data-act="notifon"></button></div>
    <div class="row" style="margin-top:16px"><div><h3 style="font-size:20px">Posizione automatica</h3><p class="note">Aggiorna la tua posizione (approssimata) ogni volta che apri l'app, per calcolare la distanza.</p></div><button class="sw ${S.geoOn?'on':''}" role="switch" aria-checked="${S.geoOn}" aria-label="Posizione automatica" data-act="geoon"></button></div></section>`;
   const cloudCard=S.cloudOn&&cloud?`<section class="card"><h3 style="font-size:20px">Collegamento tra telefoni</h3><p class="note" style="margin-top:6px">Codice coppia</p><div class="bigcode sm">${esc(fmtCode(cloud.code()))}</div>
    <p class="note" style="margin-top:10px">${S.devCode?'Su un nuovo telefono scegli "Ho un codice" e inserisci questo codice monouso (vale 15 minuti): <b>'+esc(fmtCode(S.devCode))+'</b>':'Per usare Cuoricino su un nuovo telefono genera un codice monouso.'}</p>
@@ -965,12 +1045,20 @@ const navHTML=()=>`<div class="in">${Object.keys(ICONS).map(k=>`<button data-tab
 const G=window.DUG({S:S,esc:esc,nm:nm,me:me,other:other,heartSvg:heartSvg,toast:toast,rq:rq,render:render,
   hotOn:hotOn,events:()=>S.events.filter(e=>!e.hot||hotOn()),dnum:dnum,todayStr:todayStr,safeImg:safeImg,
   setActive:m=>{if(S.mode==='local'){S.active=m;lsSave()}rq()},
-  saveGame:g=>{S.game=g;if(S.mode==='shared')db.doc('games/cur').set(g).catch(()=>toast('Non riesco a salvare la mossa.'));else lsSave();rq()},
-  clearGame:()=>{S.game=null;if(S.mode==='shared')db.doc('games/cur').delete().catch(()=>{});else lsSave();rq()},
-  mergeGame:fn=>{
+  saveGame:g=>{
+    const id=g.id||S.gopen||newGameId(); g.id=id; S.games[id]=g; S.gopen=id; S.game=g;
+    if(S.mode==='shared')db.doc('games/'+id).set(g).catch(()=>toast('Non riesco a salvare la mossa.'));else lsSave();
+    PUSH.turn(g); rq()},
+  clearGame:id=>{
+    id=id||S.gopen; if(id){delete S.games[id];if(S.mode==='shared')db.doc('games/'+id).delete().catch(()=>{})}
+    if(!id||id===S.gopen){S.gopen=null;S.game=null} if(S.mode!=='shared')lsSave(); rq()},
+  openGame:id=>{S.gopen=S.games[id]?id:null;syncGame();rq()},
+  games:()=>S.games,
+  mergeGame:(fn,id)=>{
+    id=id||S.gopen; if(!id)return;
     if(S.mode==='shared'){
-      db.doc('games/cur').get().then(s=>{const cur=s.exists?s.data():S.game;const n=fn(cur?JSON.parse(JSON.stringify(cur)):null);if(n){S.game=n;return db.doc('games/cur').set(n)}}).then(()=>rq()).catch(()=>toast('Non riesco a salvare il risultato.'));
-    }else{const n=fn(S.game?JSON.parse(JSON.stringify(S.game)):null);if(n){S.game=n;lsSave()}rq()}
+      db.doc('games/'+id).get().then(s=>{const cur=s.exists?Object.assign({id:id},s.data()):S.games[id];const n=fn(cur?JSON.parse(JSON.stringify(cur)):null);if(n){n.id=id;S.games[id]=n;syncGame();PUSH.turn(n);return db.doc('games/'+id).set(n)}}).then(()=>rq()).catch(()=>toast('Non riesco a salvare il risultato.'));
+    }else{const c=S.games[id],n=fn(c?JSON.parse(JSON.stringify(c)):null);if(n){n.id=id;S.games[id]=n;syncGame();lsSave();PUSH.turn(n)}rq()}
   },
   addScore:(w,t)=>{const sc=Object.assign({A:0,B:0,D:0},S.scores);sc.g=JSON.parse(JSON.stringify(sc.g||{}));sc[w]=(sc[w]||0)+1;if(t){const x=sc.g[t]=Object.assign({A:0,B:0,D:0},sc.g[t]);x[w]++}S.scores=sc;if(S.mode==='shared')db.doc('couple/scores').set(S.scores).catch(()=>{});else lsSave()},
   resetScores:t=>{const sc=Object.assign({A:0,B:0,D:0},S.scores);sc.g=JSON.parse(JSON.stringify(sc.g||{}));
@@ -978,6 +1066,8 @@ const G=window.DUG({S:S,esc:esc,nm:nm,me:me,other:other,heartSvg:heartSvg,toast:
     S.scores=sc;if(S.mode==='shared')db.doc('couple/scores').set(S.scores).catch(()=>{});else lsSave();rq()},
   addEvent:o=>addEvent(o).then(()=>rq()).catch(()=>toast('Non riesco a salvare nella timeline.'))});
 
+const newGameId=()=>'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+function syncGame(){const g=S.gopen?S.games[S.gopen]:null;S.game=g||null;if(S.gopen&&!g)S.gopen=null}
 function html(){
   if(S.mode==='boot')return loadingHTML();
   if(S.mode==='welcome')return welcomeHTML();
@@ -1053,6 +1143,7 @@ document.addEventListener('click',e=>{
       const need=k==='w'?dailyItem('d',today):dailyItem('w',today);
       if(k==='w'?!dayDone(m,today):!done(ans(m,need.key))){toast('Prima rispondi alla carta precedente.');break}
     }
+    if(isNewDay(today)&&k==='x'&&!dayDone(m,today)){toast('Prima fai le attività del giorno.');break}
     S.view={t:'daily',k:k};go();break}
   case 'prof': S.st='';S.nt=((S.answers[me()]||{}).note||{}).t||'';S.view={t:'prof'};go();break;
   case 'dist': S.tab='noi';S.view=null;go();break;
@@ -1083,7 +1174,12 @@ document.addEventListener('click',e=>{
     if(!S.canWrite){toast(RO);break}
     const cat=S.quickHot&&hotOn()?'hot':((S.deckCat&&!isHot(S.deckCat))?S.deckCat:'all'), pool=allowedDeck(cat), m=me();
     const fresh=shuffle(pool.filter(x=>!done(ans(m,'k'+x)))), rest=shuffle(pool.filter(x=>done(ans(m,'k'+x))));
-    const ids=fresh.concat(rest).slice(0,S.quickN);
+    let ids=fresh.concat(rest).slice(0,S.quickN);
+    if(cat==='hot'){ /* almeno una su tre senza filtri */
+      const xx=s=>DECK[s]&&DECK[s].sub==='xxx', want=Math.ceil(ids.length/3), xs=shuffle(pool.filter(xx)), have=ids.filter(xx);
+      if(have.length<want&&xs.length){const add=xs.filter(x=>ids.indexOf(x)<0).slice(0,want-have.length), keep=ids.filter(x=>!xx(x));
+        ids=shuffle(keep.slice(0,ids.length-have.length-add.length).concat(have,add))}
+    }
     S.quick={ids:ids,at:Date.now()};
     if(S.mode==='shared')db.doc('couple/quick').set(S.quick).catch(()=>toast('Non riesco a creare il quiz.')); else lsSave();
     openRun('quick');break}
@@ -1112,9 +1208,12 @@ document.addEventListener('click',e=>{
   case 'leave-no': S.confirmLeave=false;render(true);break;
   case 'leave-yes': cloud.leave(); try{location.reload()}catch(x){} break;
   case 'notifon':{
-    if(S.notifOn){S.notifOn=false;lset('sint-notif','0');render(true);break}
+    if(S.notifOn){S.notifOn=false;S.pushOn=false;lset('sint-notif','0');PUSH.disable();render(true);break}
     if(typeof Notification==='undefined'){toast('Gli avvisi non sono supportati qui. Su iPhone aggiungi prima l\'app alla schermata Home.');break}
-    Notification.requestPermission().then(r=>{if(r==='granted'){S.notifOn=true;lset('sint-notif','1');toast('Avvisi attivi')}else toast('Il telefono ha negato il permesso agli avvisi.');render(true)}).catch(()=>toast('Avvisi non disponibili qui.'));break}
+    PUSH.enable().then(r=>{
+      if(r==='ok'){S.notifOn=true;lset('sint-notif','1');S.pushOn=PUSH.ok();toast(S.pushOn?'Notifiche attive: alle 8, alle 20, partner e giochi':'Avvisi attivi solo ad app aperta')}
+      else toast('Il telefono ha negato il permesso agli avvisi.');
+      render(true)}).catch(()=>toast('Non riesco ad attivare le notifiche. Riprova.'));break}
   case 'geoon':{
     if(S.geoOn){S.geoOn=false;lset('sint-geo','0');render(true);break}
     S.geoOn=true;lset('sint-geo','1');geoUpdate(true);render(true);break}
@@ -1159,7 +1258,7 @@ document.addEventListener('click',e=>{
   case 'reset-no': S.confirmReset=false;render(true);break;
   case 'reset-yes':{
     if(idb){['docs','full','photos'].forEach(st=>idbAll(st).then(l=>l.forEach(r=>idbDel(st,r.k||r.id))).catch(()=>{}))}
-    S.profile=null;S.answers={A:{},B:{}};S.active='A';S.draw=null;S.quick=null;S.game=null;S.scores={A:0,B:0};
+    S.profile=null;S.answers={A:{},B:{}};S.active='A';S.draw=null;S.quick=null;S.game=null;S.games={};S.gopen=null;S.scores={A:0,B:0};
     S.photos=[];S.events=[];S.stories=[];S.custom=[];S.chat=[];S.full={};S.confirmReset=false;S.tab='home';S.view=null;S.photoView=null;
     try{localStorage.removeItem(LS)}catch(x){} mem.v=null; go();break}
   }
@@ -1268,7 +1367,7 @@ async function startLocal(){
   if(!v){try{const o=JSON.parse(localStorage.getItem('duetto-v2'));if(o&&o.profile)v={profile:o.profile,answers:{A:{},B:{}},active:o.active||'A'}}catch(e){}}
   if(v){
     S.profile=v.profile||null;S.answers=v.answers||{A:{},B:{}};S.active=v.active||'A';
-    S.draw=validDraw(v.draw);S.quick=v.quick||null;S.game=v.game||null;S.scores=v.scores||{A:0,B:0};
+    S.draw=validDraw(v.draw);S.quick=v.quick||null;S.games=v.games||(v.game?{cur:Object.assign({id:'cur'},v.game)}:{});S.gopen=null;S.game=null;S.scores=v.scores||{A:0,B:0};
   }
   S.mode='local'; S.photosOk=null; render();
   try{
@@ -1310,7 +1409,7 @@ async function startShared(dbm,um,id,viaCloud){
   db.doc('couple/draw').onSnapshot(snap=>{const d=snap.exists?snap.data():null;S.draw=d?validDraw(d.i):null;rq()},()=>{});
   db.doc('couple/quick').onSnapshot(snap=>{S.quick=snap.exists?snap.data():null;rq()},()=>{});
   db.doc('couple/scores').onSnapshot(snap=>{S.scores=snap.exists?Object.assign({A:0,B:0},snap.data()):{A:0,B:0};rq()},()=>{});
-  db.doc('games/cur').onSnapshot(snap=>{S.game=snap.exists?snap.data():null;rq()},()=>{});
+  db.collection('games').orderBy('at','desc').limit(40).onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{o[d.id]=Object.assign({},d.data(),{id:d.id})});S.games=o;syncGame();rq()},()=>{});
   [['photos',60],['events',200],['stories',40],['custom',100],['chat',600]].forEach(x=>{
     db.collection(x[0]).orderBy('at','desc').limit(x[1]).onSnapshot(snap=>{
       const old=x[0]==='chat'?S.chat:null;
@@ -1321,6 +1420,7 @@ async function startShared(dbm,um,id,viaCloud){
       rq();
     },()=>{});
   });
+  PUSH.sync();
   render();
 }
 async function boot(){
