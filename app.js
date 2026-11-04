@@ -5,7 +5,7 @@ const D=window.DUC, DECK=D.DECK, ALLPACKS=D.PACKS.concat(D.HOTPACKS), CITIES=D.C
 
 /* ---------- Stato ---------- */
 const S={mode:'boot',profile:null,answers:{A:{},B:{}},slot:null,active:'A',tab:'home',view:null,
-  draw:null,deckCat:'all',quick:null,quickN:10,quickHot:false,game:null,games:{},gopen:null,gdel:null,scores:{A:0,B:0},play:null,freeze:false,
+  draw:null,deckCat:'all',quick:null,quickN:10,quickHot:false,game:null,games:{},gopen:null,gdel:null,missions:{},msn:null,pickCtx:null,scores:{A:0,B:0},play:null,freeze:false,
   photos:[],events:[],stories:[],custom:[],chat:[],pcat:'all',full:{},photoView:null,confirmDel:false,confirmReset:false,
   canWrite:true,loadedP:false,slow:false,err:null,uid:null,dirty:false,photosOk:true,
   slots:{},loadedS:false,welcome:null,cloudOn:false,notifOn:false,geoOn:false,rtab:'time',ev:null,cq:null,st:'',nt:'',pickKind:null,storyTxt:'',icElim:null,icGuess:false};
@@ -16,7 +16,7 @@ const lset=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 S.notifOn=lget('sint-notif')==='1'; S.geoOn=lget('sint-geo')!=='0';
 function lsLoad(){try{return JSON.parse(localStorage.getItem(LS))||mem.v||null}catch(e){return mem.v||null}}
 function lsSave(){
-  const v={profile:S.profile,answers:S.answers,active:S.active,draw:S.draw,quick:S.quick,games:S.games,scores:S.scores};
+  const v={profile:S.profile,answers:S.answers,active:S.active,draw:S.draw,quick:S.quick,games:S.games,missions:S.missions,scores:S.scores};
   mem.v=v; try{localStorage.setItem(LS,JSON.stringify(v))}catch(e){}
 }
 
@@ -50,9 +50,17 @@ const markSvg=w=>`<svg width="${w}" height="${Math.round(w*0.66)}" viewBox="0 0 
 const xSvg='<svg class="ck" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>';
 const lockSvg='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 const hdiv=()=>`<div class="hdiv" aria-hidden="true">${heartSvg()}${heartSvg()}${heartSvg()}</div>`;
+const QP={};
+function qimg(id){
+  if(S.full[id])return S.full[id];
+  if(!QP[id]){QP[id]=1;getFull(id).then(img=>{if(img){S.full[id]=img;rq()}else QP[id]=0}).catch(()=>{QP[id]=0})}
+  return null;
+}
+const phHTML=id=>{const im=safeImg(qimg(id));return im?`<img class="qimg" src="${im}" alt="Foto">`:'<span class="qimg ld">📷 …</span>'};
+const isPh=v=>typeof v==='string'&&v.indexOf('ph:')===0;
 function pill(slot,txt,wait){
   if(wait)return `<div class="pill wait"><i class="dot ${slot}"></i><span class="who">${esc(nm(slot))}</span><span class="val">In attesa</span></div>`;
-  return `<div class="pill ${slot}"><i class="dot ${slot}"></i><span class="who">${esc(nm(slot))}</span><span class="val">${esc(txt)}</span></div>`;
+  return `<div class="pill ${slot}"><i class="dot ${slot}"></i><span class="who">${esc(nm(slot))}</span><span class="val">${isPh(txt)?phHTML(txt.slice(3)):esc(txt)}</span></div>`;
 }
 
 /* ---------- Render: coalescente, mai durante un gioco a canvas ---------- */
@@ -206,6 +214,18 @@ $file.addEventListener('change',async()=>{
       const p=await prep(files[0],{max:720,lim:140000});
       await putRec('stories',{id:newId(),by:m,at:Date.now(),img:p.img,text:(S.storyTxt||'').trim().slice(0,100)});
       S.storyTxt=''; toast('Storia pubblicata (dura 24 ore)');
+    }else if(kind==='qans'){
+      const c=S.pickCtx||{}; if(!c.k)return; toast('Carico la foto…');
+      const p=await prep(files[0],{max:900,lim:150000}), id='q'+newId(); await putFull(id,p.img); S.full[id]=p.img;
+      if(saveAns(c.k,'ph:'+id)&&c.run&&S.view&&S.view.t==='run'){advance();return}
+    }else if(kind==='chatph'){
+      const c=S.pickCtx||{}; if(!c.th)return; toast('Carico la foto…');
+      const p=await prep(files[0],{max:900,lim:150000}), id='q'+newId(); await putFull(id,p.img); S.full[id]=p.img;
+      await putRec('chat',{id:newId(),th:c.th,by:m,at:Date.now(),t:'',ph:id});
+    }else if(kind==='mission'){
+      toast('Carico la foto…');
+      const p=await prep(files[0],{max:900,lim:150000}), id='m'+newId(); await putFull(id,p.img); S.full[id]=p.img;
+      S.msn=Object.assign({open:true,note:''},S.msn,{ph:id});
     }else if(kind==='avatar'){
       const p=await prep(files[0],{max:150,lim:14000,square:true}); saveMine({av:p.img}); toast('Foto profilo aggiornata');
     }
@@ -217,14 +237,14 @@ function pickFile(kind,multi){S.pickKind=kind;$file.multiple=!!multi;$file.click
 /* ---------- Domande ---------- */
 const NAMES3=()=>[nm('A'),nm('B'),'Tutti e due'];
 function optsOfQ(q){if(q.who){const a=NAMES3();if(q.nope)a.push(D.NOPE);return a}return q.o}
-function deckItem(i){const q=DECK[i];return {key:'k'+i,t:q.t,o:optsOfQ(q),hot:!!q.hot}}
+function deckItem(i){const q=DECK[i];return {key:'k'+i,t:q.t,o:optsOfQ(q),hot:!!q.hot,ph:!!q.ph}}
 function customItem(c){return {key:'c'+c.id,t:c.t,o:(c.o&&c.o.length>=2)?c.o:null,hot:!!c.hot,by:c.by,id:c.id}}
 const IDX={d:[],w:[],x:[]};
 DECK.forEach((q,i)=>{if(i>=(D.BASE_N||DECK.length))return;if(q.hot)IDX.x.push(i);else if(q.who)IDX.w.push(i);else IDX.d.push(i)}); /* le giornaliere restano sulle domande originali: cambiare l'elenco sposterebbe le domande già risposte */
 function dailyItem(k,date){
   if(k==='x'&&isNewDay(date)){
     /* Conversazione 18+: una volta su tre arriva dalle domande senza filtri */
-    const n=dnum(date), l=(n%3===0&&DP.xxx.length)?DP.xxx:DP.hot, it=deckItem(l[Math.floor(n/3)*7%l.length]);
+    const n=dnum(date), xl=date>='2026-11-08'?DP.xxxAll:DP.xxx, l=(n%3===0&&xl.length)?xl:DP.hot, it=deckItem(l[Math.floor(n/3)*7%l.length]);
     it.key='x'+date; return it;
   }
   const l=IDX[k], idx=l[(dnum(date)+(k==='w'?7:k==='x'?3:0))%l.length], it=deckItem(idx);
@@ -243,18 +263,21 @@ function recapItems(ym){
    I giorni precedenti restano com'erano, così risposte e serie non cambiano. */
 const DAY_NEW='2026-11-05';
 const isNewDay=d=>d>=DAY_NEW;
-const DP={open:[],multi:[],hot:[],xxx:[]};
+const DP={open:[],multi:[],hot:[],xxx:[],xxxAll:[]};
 DECK.forEach((q,i)=>{
-  if(q.hot){(q.sub==='xxx'?DP.xxx:DP.hot).push(i);return}
-  if(q.who||q.t==='Preferisci…')return;
+  if(q.hot){(q.sub==='xxx'?DP.xxxAll:DP.hot).push(i);return}
+  if(q.who||q.t==='Preferisci…'||q.ph)return;
   if(!q.o)DP.open.push(i); else if(q.o.length>=3)DP.multi.push(i);
 });
+DP.xxx=DP.xxxAll.slice(0,63); /* i primi 63 restano quelli di prima: dal 8 novembre 2026 entrano anche i nuovi */
 function dayItems(date){
   const n=dnum(date), k='dy'+date;
   const T=D.TALK||[], mi=DP.multi[(n*7+3)%DP.multi.length], oi=DP.open[(n*11+5)%DP.open.length];
   return [{key:k+'q0',t:T[n%T.length],o:null,hot:false},
           {key:k+'q1',t:DECK[mi].t,o:optsOfQ(DECK[mi]),hot:false},
-          {key:k+'q2',t:DECK[oi].t,o:null,hot:false}];
+          (date>='2026-11-08'&&n%3===1&&(D.PHQ||[]).length)
+            ?{key:k+'q2',t:D.PHQ[Math.floor(n/3)%D.PHQ.length],o:null,ph:true,hot:false}
+            :{key:k+'q2',t:DECK[oi].t,o:null,hot:false}];
 }
 const dayDone=(slot,d)=>isMonthEnd(d)?recapItems(d.slice(0,7)).every(it=>done(ans(slot,it.key))):isNewDay(d)?dayItems(d).every(it=>done(ans(slot,it.key))):done(ans(slot,'d'+d));
 function srcOf(src){
@@ -306,12 +329,13 @@ const isCust=(it,v)=>!!it.o&&typeof v==='string';
 function custForm(it,run,cur){
   return `<form class="form tform cust" data-form="tans" ${run?'data-run="1"':''} data-key="${esc(it.key)}" novalidate><input maxlength="160" autocomplete="off" placeholder="O scrivi la tua risposta" value="${esc(typeof cur==='string'?cur:'')}"><button class="btn" type="submit">Invia</button></form>`;
 }
+const phBtn=(it,run)=>`<div class="actions" style="margin-top:8px"><button type="button" class="btn ${it.ph?'':'ghost'} sm" data-act="qphoto" data-key="${esc(it.key)}" data-run="${run?1:0}">📷 ${it.ph?'Scatta o scegli una foto':'Rispondi con una foto'}</button></div>`;
 function answerBlock(it){
   const m=me(), o=other(m), mine=ans(m,it.key), th=ans(o,it.key);
   const show=v=>shw(it,v);
   if(!done(mine)){
-    if(it.o)return `<div class="opts" style="--me:var(--${m==='A'?'a':'b'})">${it.o.map((x,i)=>`<button class="opt" data-act="pick" data-key="${esc(it.key)}" data-i="${i}">${esc(x)}</button>`).join('')}</div>${custForm(it,false)}`;
-    return `<form class="form tform" data-form="tans" data-key="${esc(it.key)}" novalidate><input maxlength="160" autocomplete="off" placeholder="Scrivi la tua risposta"><button class="btn" type="submit">Invia</button></form>`;
+    if(it.o)return `<div class="opts" style="--me:var(--${m==='A'?'a':'b'})">${it.o.map((x,i)=>`<button class="opt" data-act="pick" data-key="${esc(it.key)}" data-i="${i}">${esc(x)}</button>`).join('')}</div>${custForm(it,false)}${phBtn(it,false)}`;
+    return `${it.ph?phBtn(it,false):''}<form class="form tform" data-form="tans" data-key="${esc(it.key)}" novalidate><input maxlength="160" autocomplete="off" placeholder="${it.ph?'Oppure descrivila a parole':'Scrivi la tua risposta'}"><button class="btn" type="submit">Invia</button></form>${it.ph?'':phBtn(it,false)}`;
   }
   if(!done(th)){
     return `<div class="pairs">${pill(m,show(mine))}</div>
@@ -470,6 +494,78 @@ function specialsHTML(){
    ${nxt?`<section class="card ups">${nxt}</section>`:''}`;
 }
 
+
+/* --- Missione segreta del giorno ---
+   Ognuno ha una missione sull'altro (far dire, far fare, una foto). L'altro non la vede finché chi l'ha ricevuta
+   non dice "compiuta": a quel punto compare cosa era, con la spiegazione e l'eventuale foto. Tutto sparisce a fine giornata. */
+const MS=D.MISSIONS||[];
+const msId=(date,slot)=>date+'_'+slot;
+function missionFor(date,slot){
+  const pool=MS.filter(x=>hotOn()||!x.hot), d=S.missions[msId(date,slot)]||{};
+  return pool[(dnum(date)*13+(slot==='A'?1:7)+(d.sk?5:0))%pool.length];
+}
+function saveMission(date,slot,patch){
+  const id=msId(date,slot), rec=Object.assign({},S.missions[id],patch,{slot:slot,date:date,at:Date.now()});
+  S.missions[id]=rec;
+  if(S.mode==='shared')db.doc('missions/'+id).set(rec).catch(()=>toast('Non riesco a salvare la missione.')); else lsSave();
+  rq();
+}
+const MKIND={say:'Far dire',do:'Far fare',photo:'Foto'};
+function missionCard(t){
+  const m=me(), md=S.missions[msId(t,m)]||{}, od=S.missions[msId(t,other(m))]||{};
+  const av=['A','B'].map(x=>{const dn=(S.missions[msId(t,x)]||{}).done;return `<span class="ca2" style="position:relative">${avatarHTML(x,'s')}${dn?'<span class="ckb"><svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5"/></svg></span>':''}</span>`}).join('');
+  return `<button class="dc c2" data-act="mission"><div><span class="tg">Segreta</span><h3>Missione<br>del giorno</h3></div><div class="ft"><span class="avs">${av}</span><span class="go">${od.done&&!md.done?'SVELATA · ':''}${md.done?'COMPIUTA':'DA FARE'}</span></div></button>`;
+}
+function missionHTML(){
+  const t=todayStr(), m=me(), o=other(m), mi=missionFor(t,m), omi=missionFor(t,o);
+  const md=S.missions[msId(t,m)]||{}, od=S.missions[msId(t,o)]||{};
+  let mine;
+  if(md.done){
+    mine=`<span class="tag">${MKIND[mi.k]}</span><h3 class="qtext">${esc(mi.t)}</h3><p class="verdict eq">${heartSvg()}Compiuta! ${esc(nm(o))} ora lo sa.</p>${md.note?`<p>«${esc(md.note)}»</p>`:''}${md.ph?phHTML(md.ph):''}`;
+  }else if(S.msn&&S.msn.open){
+    const f=S.msn;
+    mine=`<span class="tag">${MKIND[mi.k]}</span><h3 class="qtext">${esc(mi.t)}</h3>
+     <div class="form" style="margin-top:10px"><label for="f-mn">Com'è andata? Racconta come ci sei riuscito/a${mi.k==='photo'?' (qui serve una foto)':''}</label>
+      <textarea id="f-mn" data-d="msn.note" maxlength="300" placeholder="Raccontalo">${esc(f.note||'')}</textarea></div>
+     ${f.ph?phHTML(f.ph):''}
+     <div class="actions"><button class="btn ghost sm" data-act="mph">📷 ${f.ph?'Cambia foto':'Aggiungi una foto'}</button></div>
+     <div class="actions"><button class="btn" data-act="mfinish">Rivela all'altro/a</button><button class="btn ghost" data-act="mcancel">Annulla</button></div>`;
+  }else{
+    mine=`<span class="tag">${MKIND[mi.k]}</span><h3 class="qtext">${esc(mi.t)}</h3>
+     <p class="note" style="margin-top:6px">Non dire niente: ${esc(nm(o))} non deve saperlo. Quando ce l'hai fatta premi "Missione compiuta" e racconta com'è andata.</p>
+     <div class="actions"><button class="btn" data-act="mdone">Missione compiuta</button>${md.sk?'':'<button class="btn ghost" data-act="mskip">Cambiala (una volta)</button>'}</div>`;
+  }
+  const theirs=od.done
+    ?`<span class="tag">${MKIND[omi.k]}</span><h3 class="qtext">${esc(omi.t)}</h3><p class="note">Ecco cosa doveva riuscire a ottenere da te.</p>${od.note?`<p>«${esc(od.note)}»</p>`:''}${od.ph?phHTML(od.ph):''}`
+    :`<p>${esc(nm(o))} ha una missione segreta su di te. Scoprirai cosa era quando dirà che è compiuta. 👀</p>`;
+  return headerHTML()+`<section class="card"><p class="eyebrow">La tua missione segreta</p>${mine}</section>
+   <section class="card"><p class="eyebrow">La missione di ${esc(nm(o))} per te</p>${theirs}</section>
+   <p class="note">Le missioni e le loro foto spariscono alla fine della giornata.</p>${backBtn('back','Torna alla home')}`;
+}
+
+/* --- Foto e dati "del giorno": spariscono il giorno dopo ---
+   Risposte e foto delle attività del giorno (e le chat collegate) non restano: del giorno rimane solo il segno che l'hai fatto,
+   per la serie. Le foto date nei quiz e nel mazzo restano invece nel loro quiz. */
+const DAYKEY=/^(?:dy|x)(\d{4}-\d\d-\d\d)(?:q\d)?$/;
+function purgeDaily(){
+  if(S.mode==='boot'||!S.watchOk&&S.mode==='shared')return;
+  const t=todayStr(), local=S.mode==='local', mine=sl=>local||sl===me();
+  ['A','B'].forEach(sl=>{
+    if(!mine(sl))return;
+    const a=S.answers[sl]||{}, ch={};
+    Object.keys(a).forEach(k=>{const m=DAYKEY.exec(k);if(!m||m[1]<DAY_NEW||m[1]>=t||a[k]==='✓'||!done(a[k]))return; if(isPh(a[k]))delFull(a[k].slice(3)); ch[k]='✓'});
+    if(Object.keys(ch).length){
+      if(local){S.answers[sl]=Object.assign({},a,ch);lsSave()}
+      else if(sl===me())saveMine(ch);
+    }
+  });
+  (S.chat||[]).forEach(c=>{const m=DAYKEY.exec(c.th||'');if(!m||m[1]<DAY_NEW||m[1]>=t||!mine(c.by))return; if(c.ph)delFull(c.ph); delRec('chat',c.id).catch(()=>{})});
+  Object.keys(S.missions||{}).forEach(id=>{const r=S.missions[id];if(!r||!r.date||r.date>=t||!mine(r.slot))return;
+    if(r.ph)delFull(r.ph); delete S.missions[id];
+    if(S.mode==='shared')db.doc('missions/'+id).delete().catch(()=>{}); else lsSave()});
+}
+setInterval(purgeDaily,60000); setTimeout(purgeDaily,8000);
+
 /* --- Promemoria, avvisi, posizione --- */
 function reminderHTML(){
   const t=todayStr(), m=me(), o=other(m);
@@ -614,6 +710,7 @@ function dailyCards(){
     return `<div class="dgrid">
     ${me_?recapCard():dayCard}
     ${me_?dayCard:''}
+    ${missionCard(t)}
     ${card('c3','x',sx,'Conversazione','18+',lockX2,on?'prev':'hot')}
     ${activeSpecials().map(specialCard).join('')}
     <button class="dc cg" data-tab="giochi"><div><span class="tg">${mine?'Tocca a te':'Sfida del giorno'}</span><h3>Sfida<br>di coppia</h3></div><div class="ft"><span class="avs">${avatarHTML('A','s')}${'<span class="ca2" style="position:relative">'+avatarHTML('B','s')+'</span>'}</span><span class="go">${mine?mine+(mine===1?' PARTITA':' PARTITE'):'GIOCA'}</span></div></button>
@@ -636,6 +733,7 @@ function notesHTML(){
 }
 function homeHTML(){
   if(S.view&&S.view.t==='daily')return dailyHTML();
+  if(S.view&&S.view.t==='mission')return missionHTML();
   if(S.view&&S.view.t==='prof')return profHTML();
   if(S.view&&S.view.t==='story')return storyHTML();
   const streakN=streak();
@@ -771,8 +869,8 @@ function runHTML(){
   const src=srcOf(S.view.src), items=src.items, i=S.view.i, it=items[i], m=me(), cur=ans(m,it.key);
   const segs=items.map((_,j)=>`<span class="seg ${j<i?'done':''} ${j===i?'cur':''}"></span>`).join('');
   const body=it.o
-    ?`<div class="opts">${it.o.map((x,k)=>`<button class="opt ${cur===k?'sel':''}" data-act="ans" data-i="${k}">${esc(x)}</button>`).join('')}</div>${custForm(it,true,cur)}`
-    :`<form class="form tform" data-form="tans" data-run="1" data-key="${esc(it.key)}" novalidate><input maxlength="160" autocomplete="off" placeholder="Scrivi la tua risposta" value="${esc(typeof cur==='string'?cur:'')}"><button class="btn" type="submit">Invia</button></form>`;
+    ?`<div class="opts">${it.o.map((x,k)=>`<button class="opt ${cur===k?'sel':''}" data-act="ans" data-i="${k}">${esc(x)}</button>`).join('')}</div>${custForm(it,true,cur)}${phBtn(it,true)}`
+    :`${it.ph?phBtn(it,true):''}<form class="form tform" data-form="tans" data-run="1" data-key="${esc(it.key)}" novalidate><input maxlength="160" autocomplete="off" placeholder="${it.ph?'Oppure descrivila a parole':'Scrivi la tua risposta'}" value="${esc(typeof cur==='string'&&!isPh(cur)?cur:'')}"><button class="btn" type="submit">Invia</button></form>${it.ph?'':phBtn(it,true)}`;
   return headerHTML()+`<section class="card run ${m}"><div class="qhead"><p class="eyebrow">${esc(src.title)} · ${i+1} di ${items.length}</p></div>
    <div class="segs" aria-hidden="true">${segs}</div><h2 class="qtext">${esc(it.t)}</h2>${body}
    <div class="actions">${i>0?'<button class="btn ghost" data-act="prev">Indietro</button>':''}<button class="btn ghost" data-act="back">Esci</button></div></section>`;
@@ -787,15 +885,15 @@ const thMsgs=th=>S.chat.filter(c=>c.th===th).sort((a,b)=>a.at-b.at);
 const msgTime=t=>{try{return new Date(t).toLocaleString('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}};
 function chatHTML(th,title){
   const ms=thMsgs(th), m=me();
-  const list=ms.length?ms.map(c=>`<div class="msg ${c.by} ${c.by===m?'mine':''}"><span class="who">${esc(nm(c.by))} · ${esc(msgTime(c.at))}</span><p>${esc(c.t)}</p></div>`).join('')
+  const list=ms.length?ms.map(c=>`<div class="msg ${c.by} ${c.by===m?'mine':''}"><span class="who">${esc(nm(c.by))} · ${esc(msgTime(c.at))}</span>${c.ph?phHTML(c.ph):''}${c.t?`<p>${esc(c.t)}</p>`:''}</div>`).join('')
     :'<p class="note">Nessun messaggio, per ora. Cominciate voi: com\'è andata? Vi aspettavate la stessa risposta?</p>';
   return `<section class="card chat"><h3 style="font-size:20px">${esc(title||'Discussione')}</h3><div class="msgs">${list}</div>
-   <form class="form tform" data-form="chat" data-th="${esc(th)}" novalidate><input maxlength="300" autocomplete="off" placeholder="Scrivi un messaggio"><button class="btn" type="submit">Invia</button></form></section>`;
+   <form class="form tform" data-form="chat" data-th="${esc(th)}" novalidate><input maxlength="300" autocomplete="off" placeholder="Scrivi un messaggio"><button class="btn" type="submit">Invia</button><button type="button" class="btn ghost" data-act="chatph" data-th="${esc(th)}" aria-label="Invia una foto">📷</button></form></section>`;
 }
 function chatNotify(old){
   if(!old||!S.watchOk)return;
   const ids=new Set(old.map(c=>c.id)), m=me();
-  S.chat.forEach(c=>{if(!ids.has(c.id)&&c.by!==m&&Date.now()-c.at<6e4)notify(nm(c.by),c.t)});
+  S.chat.forEach(c=>{if(!ids.has(c.id)&&c.by!==m&&Date.now()-c.at<6e4)notify(nm(c.by),c.t||'📷 Foto')});
 }
 function resHTML(){
   const src=srcOf(S.view.src), m=me(), o=other(m); let cmp=0, same=0; const diff=[];
@@ -1159,6 +1257,19 @@ document.addEventListener('click',e=>{
   case 'storypick': pickFile('story',false);break;
   case 'addstory': if(!S.canWrite){toast(RO);break} pickFile('story',false);break;
   case 'avpick': pickFile('avatar',false);break;
+  case 'qphoto': S.pickCtx={k:t.dataset.key,run:t.dataset.run==='1'};pickFile('qans',false);break;
+  case 'chatph': S.pickCtx={th:t.dataset.th};pickFile('chatph',false);break;
+  case 'mission': S.view={t:'mission'};S.msn=null;S.tab='home';go();break;
+  case 'mdone': S.msn={open:true,note:'',ph:null};go();break;
+  case 'mcancel': S.msn=null;go();break;
+  case 'mph': pickFile('mission',false);break;
+  case 'mskip':{const d=todayStr();saveMission(d,me(),{sk:1});toast('Missione cambiata');go();break}
+  case 'mfinish':{
+    const d=todayStr(), m=me(), mi=missionFor(d,m), f=S.msn||{};
+    if(mi.k==='photo'&&!f.ph){toast('Per questa missione serve una foto.');break}
+    saveMission(d,m,{done:true,note:String(f.note||'').trim().slice(0,300),ph:f.ph||null});
+    S.msn=null; PUSH.send({title:'🕵️ Missione compiuta!',body:nm(m)+' dice di avercela fatta: scopri cosa doveva ottenere da te.',tag:'mission',url:'./'});
+    toast('Rivelata a '+nm(other(m)));go();break}
   case 'setst':{const p=D.STATUS.concat(hotOn()?D.STATUS_HOT:[])[i];if(p&&saveMine({st:{t:p,at:Date.now()}})){toast('Stato aggiornato');S.view=null;go()}break}
   case 'clrst': if(saveMine({st:null})){toast('Stato tolto');go()}break;
   case 'draw':{
@@ -1259,7 +1370,7 @@ document.addEventListener('click',e=>{
   case 'reset-yes':{
     if(idb){['docs','full','photos'].forEach(st=>idbAll(st).then(l=>l.forEach(r=>idbDel(st,r.k||r.id))).catch(()=>{}))}
     S.profile=null;S.answers={A:{},B:{}};S.active='A';S.draw=null;S.quick=null;S.game=null;S.games={};S.gopen=null;S.scores={A:0,B:0};
-    S.photos=[];S.events=[];S.stories=[];S.custom=[];S.chat=[];S.full={};S.confirmReset=false;S.tab='home';S.view=null;S.photoView=null;
+    S.photos=[];S.events=[];S.stories=[];S.custom=[];S.chat=[];S.full={};S.missions={};S.msn=null;S.confirmReset=false;S.tab='home';S.view=null;S.photoView=null;
     try{localStorage.removeItem(LS)}catch(x){} mem.v=null; go();break}
   }
 });
@@ -1367,7 +1478,7 @@ async function startLocal(){
   if(!v){try{const o=JSON.parse(localStorage.getItem('duetto-v2'));if(o&&o.profile)v={profile:o.profile,answers:{A:{},B:{}},active:o.active||'A'}}catch(e){}}
   if(v){
     S.profile=v.profile||null;S.answers=v.answers||{A:{},B:{}};S.active=v.active||'A';
-    S.draw=validDraw(v.draw);S.quick=v.quick||null;S.games=v.games||(v.game?{cur:Object.assign({id:'cur'},v.game)}:{});S.gopen=null;S.game=null;S.scores=v.scores||{A:0,B:0};
+    S.draw=validDraw(v.draw);S.quick=v.quick||null;S.games=v.games||(v.game?{cur:Object.assign({id:'cur'},v.game)}:{});S.gopen=null;S.game=null;S.missions=v.missions||{};S.scores=v.scores||{A:0,B:0};
   }
   S.mode='local'; S.photosOk=null; render();
   try{
@@ -1408,6 +1519,7 @@ async function startShared(dbm,um,id,viaCloud){
   },()=>{}));
   db.doc('couple/draw').onSnapshot(snap=>{const d=snap.exists?snap.data():null;S.draw=d?validDraw(d.i):null;rq()},()=>{});
   db.doc('couple/quick').onSnapshot(snap=>{S.quick=snap.exists?snap.data():null;rq()},()=>{});
+  db.collection('missions').orderBy('at','desc').limit(14).onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{o[d.id]=d.data()});S.missions=o;rq()},()=>{});
   db.doc('couple/scores').onSnapshot(snap=>{S.scores=snap.exists?Object.assign({A:0,B:0},snap.data()):{A:0,B:0};rq()},()=>{});
   db.collection('games').orderBy('at','desc').limit(40).onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{o[d.id]=Object.assign({},d.data(),{id:d.id})});S.games=o;syncGame();rq()},()=>{});
   [['photos',60],['events',200],['stories',40],['custom',100],['chat',600]].forEach(x=>{

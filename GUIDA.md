@@ -81,3 +81,10 @@ Note:
 5. SQL Editor: apri `supabase-notifiche.sql`, sostituisci `PASTE_CRON_SECRET` con il valore di CRON_SECRET e premi Run. Se dice che pg_cron o pg_net non sono attive, abilitale in Database > Extensions e rifai Run.
 6. Carica il progetto su GitHub (`config.js` ha già la chiave pubblica `vapid`).
 7. Su **ogni telefono**: Noi > Avvisi, attiva l'interruttore e accetta il permesso. Su iPhone l'app deve essere nella schermata Home (iOS 16.4 o più recente) e va aperta da lì.
+
+## Novità versione 12
+- **Missione segreta del giorno** (nelle attività): ognuno ha una missione sull'altro, da far dire, far fare o fotografare. L'altro non la vede. Quando premi "Missione compiuta" racconti com'è andata (con foto, obbligatoria per le missioni foto) e all'altro compare cosa doveva ottenere. Se hai sbloccato l'hot ci sono anche missioni maliziose.
+- **Risposte con foto:** in ogni domanda c'è "📷 Rispondi con una foto", e anche le chat accanto alle risposte accettano foto. Alcune domande (e un giorno su tre nelle attività) chiedono proprio una foto.
+- **Foto e risposte del giorno spariscono:** il giorno dopo, le risposte e le foto delle attività del giorno, le loro chat e le missioni vengono cancellate (resta solo il segno "fatto" per la serie). Le foto date nei quiz e nel mazzo restano invece nel loro quiz.
+- **Più domande senza filtri:** 123 in tutto.
+- Per aggiornare non serve nulla di nuovo su Supabase: basta ricaricare i file (push).
