@@ -270,16 +270,23 @@ DECK.forEach((q,i)=>{
   if(!q.o)DP.open.push(i); else if(q.o.length>=3)DP.multi.push(i);
 });
 DP.xxx=DP.xxxAll.slice(0,63); /* i primi 63 restano quelli di prima: dal 8 novembre 2026 entrano anche i nuovi */
-function dayItems(date){
+function dayItems(date,withHot){
+  if(withHot===undefined)withHot=true;
   const n=dnum(date), k='dy'+date;
   const T=D.TALK||[], mi=DP.multi[(n*7+3)%DP.multi.length], oi=DP.open[(n*11+5)%DP.open.length];
-  return [{key:k+'q0',t:T[n%T.length],o:null,hot:false},
+  const core=[{key:k+'q0',t:T[n%T.length],o:null,hot:false},
           {key:k+'q1',t:DECK[mi].t,o:optsOfQ(DECK[mi]),hot:false},
           (date>='2026-11-08'&&n%3===1&&(D.PHQ||[]).length)
             ?{key:k+'q2',t:D.PHQ[Math.floor(n/3)%D.PHQ.length],o:null,ph:true,hot:false}
             :{key:k+'q2',t:DECK[oi].t,o:null,hot:false}];
+  if(withHot&&hotOn()){
+    /* Con l'hot sbloccato: una domanda in più, facoltativa. Una volta su tre è "senza filtri", le altre sono più velate. */
+    const xl=date>='2026-11-08'?DP.xxxAll:DP.xxx, l=(n%3===0&&xl.length)?xl:DP.hot, it=deckItem(l[(Math.floor(n/3)*7+n)%l.length]);
+    it.key=k+'q3'; core.push(it);
+  }
+  return core;
 }
-const dayDone=(slot,d)=>isMonthEnd(d)?recapItems(d.slice(0,7)).every(it=>done(ans(slot,it.key))):isNewDay(d)?dayItems(d).every(it=>done(ans(slot,it.key))):done(ans(slot,'d'+d));
+const dayDone=(slot,d)=>isMonthEnd(d)?recapItems(d.slice(0,7)).every(it=>done(ans(slot,it.key))):isNewDay(d)?(dayItems(d,false).every(it=>done(ans(slot,it.key)))||(d===DAY_NEW&&done(ans(slot,'d'+d)))):done(ans(slot,'d'+d));
 function srcOf(src){
   if(src.indexOf('month:')===0)return {title:'Resoconto del mese',items:recapItems(src.slice(6))};
   if(src.indexOf('day:')===0)return {title:'Attività del giorno',items:dayItems(src.slice(4))};
@@ -512,9 +519,10 @@ function saveMission(date,slot,patch){
 }
 const MKIND={say:'Far dire',do:'Far fare',photo:'Foto'};
 function missionCard(t){
-  const m=me(), md=S.missions[msId(t,m)]||{}, od=S.missions[msId(t,other(m))]||{};
+  const m=me(), md=S.missions[msId(t,m)]||{}, od=S.missions[msId(t,other(m))]||{}, mi=missionFor(t,m);
   const av=['A','B'].map(x=>{const dn=(S.missions[msId(t,x)]||{}).done;return `<span class="ca2" style="position:relative">${avatarHTML(x,'s')}${dn?'<span class="ckb"><svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5"/></svg></span>':''}</span>`}).join('');
-  return `<button class="dc c2" data-act="mission"><div><span class="tg">Segreta</span><h3>Missione<br>del giorno</h3></div><div class="ft"><span class="avs">${av}</span><span class="go">${od.done&&!md.done?'SVELATA · ':''}${md.done?'COMPIUTA':'DA FARE'}</span></div></button>`;
+  const txt=md.done?`<p style="font-size:14px;margin-top:6px"><b>Compiuta ✓</b> ${od.done?'':`· aspetta che ${esc(nm(other(m)))} compia la sua`}</p>`:`<p style="font-size:14px;margin-top:6px"><b>${MKIND[mi.k]}:</b> ${esc(mi.t)}</p>`;
+  return `<button class="dc cs msn" data-act="mission"><div><span class="tg">${od.done&&!md.done?'La sua è svelata · ':''}Segreta, solo per te</span><h3>Missione del giorno</h3>${txt}</div><div class="ft"><span class="avs">${av}</span><span class="go">${md.done?'VEDI':'VAI ALLA MISSIONE'}</span></div></button>`;
 }
 function missionHTML(){
   const t=todayStr(), m=me(), o=other(m), mi=missionFor(t,m), omi=missionFor(t,o);
@@ -673,7 +681,7 @@ function dailyCount(){
   Object.keys(A).forEach(k=>{
     if(/^d\d{4}-\d\d-\d\d$/.test(k)&&done(A[k])&&done(B[k]))n++;
     const dm=/^dy(\d{4}-\d\d-\d\d)q0$/.exec(k);
-    if(dm&&dayItems(dm[1]).every(x=>done(A[x.key])&&done(B[x.key])))n++;
+    if(dm&&dayItems(dm[1],false).every(x=>done(A[x.key])&&done(B[x.key])))n++;
     const m=/^mr(\d{4})(\d\d)q0$/.exec(k);
     if(m){const it=recapItems(m[1]+'-'+m[2]);if(it.every(x=>done(A[x.key])&&done(B[x.key])))n++}
   });
@@ -686,44 +694,27 @@ function statsHTML(){
   return `<section class="stats"><div class="stat">${a}</div><div class="stat"><b>${dc}</b><span>${dc===1?'risposta':'risposte'} alla domanda del giorno</span></div></section>`;
 }
 function dailyCards(){
-  const t=todayStr(), m=me(), on=hotOn();
-  const sd=dailyItem('d',t), sw=dailyItem('w',t), sx=dailyItem('x',t), me_=isMonthEnd(t);
-  const avs=it=>['A','B'].map(s=>`<span class="ca2" style="position:relative">${avatarHTML(s,'s')}${done(ans(s,it.key))?'<span class="ckb"><svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5"/></svg></span>':''}</span>`).join('');
-  const foot=(it,locked)=>{
-    if(locked)return `<span class="go">${lockSvg}SBLOCCA</span>`;
-    const mine=done(ans(m,it.key)), both=mine&&done(ans(other(m),it.key));
-    return `<span class="go">${both?'RISULTATI':mine?'IN ATTESA':'RISPONDI'}</span>`;
-  };
-  const card=(cls,k,it,title,tag,locked,hint)=>`<button class="dc ${cls} ${locked?'lock':''}" data-act="daily" data-k="${k}" ${hint?'data-hint="'+hint+'"':''}>
-    <div>${tag?`<span class="tg">${tag}</span>`:''}<h3>${title}</h3></div>
-    <div class="ft"><span class="avs">${avs(it)}</span>${foot(it,locked)}</div></button>`;
-  const lockW=!dayDone(m,t);
-  const recapCard=()=>{const src='month:'+t.slice(0,7), it=srcOf(src).items, mine=prog(it,m), both=mine===it.length&&prog(it,other(m))===it.length;
-    const av=['A','B'].map(x=>`<span class="ca2" style="position:relative">${avatarHTML(x,'s')}${prog(it,x)===it.length?'<span class="ckb"><svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5"/></svg></span>':''}</span>`).join('');
-    return `<button class="dc c1" data-act="open" data-src="${src}"><div><span class="tg">Fine mese</span><h3>Resoconto<br>del mese</h3></div><div class="ft"><span class="avs">${av}</span><span class="go">${both?'RISULTATI':mine===it.length?'IN ATTESA':mine+'/'+it.length}</span></div></button>`};
-  const lockX=!on||!done(ans(m,sw.key));
-  if(isNewDay(t)){
-    const dsrc='day:'+t, dit=dayItems(t), dm=prog(dit,m), dBoth=dm===dit.length&&prog(dit,other(m))===dit.length;
-    const dav=['A','B'].map(x=>`<span class="ca2" style="position:relative">${avatarHTML(x,'s')}${prog(dit,x)===dit.length?'<span class="ckb"><svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5"/></svg></span>':''}</span>`).join('');
-    const dayCard=`<button class="dc c1" data-act="open" data-src="${dsrc}"><div><span class="tg">Oggi</span><h3>Attività<br>del giorno</h3></div><div class="ft"><span class="avs">${dav}</span><span class="go">${dBoth?'RISULTATI':dm===dit.length?'IN ATTESA':dm+'/'+dit.length}</span></div></button>`;
-    const lockX2=!on||!dayDone(m,t), mine=Object.values(S.games||{}).filter(x=>G.myTurn(x,m)).length;
-    return `<div class="dgrid">
-    ${me_?recapCard():dayCard}
-    ${me_?dayCard:''}
-    ${missionCard(t)}
-    ${card('c3','x',sx,'Conversazione','18+',lockX2,on?'prev':'hot')}
-    ${activeSpecials().map(specialCard).join('')}
-    <button class="dc cg" data-tab="giochi"><div><span class="tg">${mine?'Tocca a te':'Sfida del giorno'}</span><h3>Sfida<br>di coppia</h3></div><div class="ft"><span class="avs">${avatarHTML('A','s')}${'<span class="ca2" style="position:relative">'+avatarHTML('B','s')+'</span>'}</span><span class="go">${mine?mine+(mine===1?' PARTITA':' PARTITE'):'GIOCA'}</span></div></button>
-  </div>`;
+  const t=todayStr(), m=me(), o=other(m), me_=isMonthEnd(t), newd=isNewDay(t);
+  const chk='<span class="ckb"><svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5"/></svg></span>';
+  const avOf=fn=>['A','B'].map(x=>`<span class="ca2" style="position:relative">${avatarHTML(x,'s')}${fn(x)?chk:''}</span>`).join('');
+  /* 1) Domanda del giorno (a fine mese diventa il resoconto) */
+  let first;
+  if(me_){
+    const src='month:'+t.slice(0,7), it=srcOf(src).items, mine=prog(it,m), both=mine===it.length&&prog(it,o)===it.length;
+    first=`<button class="dc c1" data-act="open" data-src="${src}"><div><span class="tg">Fine mese</span><h3>Resoconto<br>del mese</h3></div><div class="ft"><span class="avs">${avOf(x=>prog(it,x)===it.length)}</span><span class="go">${both?'RISULTATI':mine===it.length?'IN ATTESA':mine+'/'+it.length}</span></div></button>`;
+  }else if(newd){
+    const it=dayItems(t), mine=prog(it,m), both=mine===it.length&&prog(it,o)===it.length, hotq=it.some(x=>x.hot);
+    first=`<button class="dc c1" data-act="open" data-src="day:${t}"><div><span class="tg">${hotq?'18+ incluse':'Oggi'}</span><h3>Domanda<br>del giorno</h3></div><div class="ft"><span class="avs">${avOf(x=>prog(it,x)===it.length)}</span><span class="go">${both?'RISULTATI':mine===it.length?'IN ATTESA':mine+'/'+it.length}</span></div></button>`;
+  }else{
+    const it=dailyItem('d',t), mine=done(ans(m,it.key)), both=mine&&done(ans(o,it.key));
+    first=`<button class="dc c1" data-act="daily" data-k="d"><div><h3>Domanda<br>del giorno</h3></div><div class="ft"><span class="avs">${avOf(x=>done(ans(x,it.key)))}</span><span class="go">${both?'RISULTATI':mine?'IN ATTESA':'RISPONDI'}</span></div></button>`;
   }
-  const g=Object.values(S.games||{}).find(x=>!x.w);
-  return `<div class="dgrid">
-    ${me_?recapCard():card('c1','d',sd,'Domanda<br>del giorno','',false)}
-    ${card('c2','w',sw,'Chi è più<br>probabile?','',lockW,'prev')}
-    ${card('c3','x',sx,'Conversazione','18+',lockX,on?'prev':'hot')}
-    ${activeSpecials().map(specialCard).join('')}
-    <button class="dc cg" data-tab="giochi"><div><h3>Sfida<br>di coppia</h3></div><div class="ft"><span class="avs">${avatarHTML('A','s')}${'<span class="ca2" style="position:relative">'+avatarHTML('B','s')+'</span>'}</span><span class="go">${g&&!g.w?'CONTINUA':'GIOCA'}</span></div></button>
-  </div>`;
+  /* 2) Sfida di coppia */
+  const mineG=Object.values(S.games||{}).filter(x=>G.myTurn(x,m)).length;
+  const sfida=`<button class="dc cg" data-tab="giochi"><div><span class="tg">${mineG?'Tocca a te':'Sfida del giorno'}</span><h3>Sfida<br>di coppia</h3></div><div class="ft"><span class="avs">${avOf(()=>false)}</span><span class="go">${mineG?mineG+(mineG===1?' PARTITA':' PARTITE'):'GIOCA'}</span></div></button>`;
+  /* 3) Missione del giorno */
+  const sp=activeSpecials();
+  return `<div class="dgrid">${first}${sfida}${missionCard(t)}</div>${sp.length?`<div class="sec"><h3>Sorprese di oggi</h3></div><div class="dgrid">${sp.map(specialCard).join('')}</div>`:''}`;
 }
 function notesHTML(){
   const m=me(), o=other(m), on=(S.answers[o]||{}).note, mn=(S.answers[m]||{}).note;
@@ -788,25 +779,27 @@ function storyHTML(){
 /* --- Quiz --- */
 function quizHTML(){
   const v=S.view;
-  if(v){if(v.t==='run')return runHTML();if(v.t==='res')return resHTML();if(v.t==='addq')return addqHTML()}
+  if(v){if(v.t==='run')return runHTML();if(v.t==='res')return resHTML();if(v.t==='addq')return addqHTML();if(v.t==='deckq')return deckQHTML()}
   return headerHTML()+`<h2 class="h2">Quiz</h2>`+deckHTML()+specialsHTML()+quickHTML()+customHTML()+packsHTML();
 }
 function deckHTML(){
   const on=hotOn(); let cat=S.deckCat||'all'; if(isHot(cat)&&!on)cat='all';
-  const pool=allowedDeck(cat).length+customPool(cat).length;
-  const dr=drawIt(); let body;
-  if(!dr){
-    body=`<p class="note">Una domanda a caso, uguale per tutti e due. Pescatene quante ne volete.</p>
-     <div class="actions"><button class="btn" data-act="draw">${heartSvg()}Pesca una domanda</button></div>`;
-  }else{
-    const it=dr.it, q=dr.q, both=done(ans('A',it.key))&&done(ans('B',it.key));
-    const kind=q.mine?(q.o?'Vostra':'Vostra · risposta libera'):q.who?'Chi dei due?':!q.o?'Risposta libera':q.t==='Preferisci…'?'Preferisci':'Sinceramente', ctag=(!q.hot&&q.cat)?dcatName(q.cat):'';
-    body=`<span class="tag ${q.hot?'hot':''}">${q.hot?'Hot · ':''}${esc(kind)}${ctag?' · '+esc(ctag):''}</span><h3 class="qtext">${esc(it.t)}</h3>${answerBlock(it)}
-     <div class="actions"><button class="btn ${both?'':'ghost'}" data-act="draw">${heartSvg()}${both?'Pesca un\'altra':'Salta'}</button></div>`;
-  }
+  const pool=allowedDeck(cat).length+customPool(cat).length, dr=drawIt();
   const total=DECK.filter(q=>!q.hot).length+S.custom.filter(c=>!c.hot).length;
+  const resume=dr&&!(done(ans('A',dr.it.key))&&done(ans('B',dr.it.key)))?`<button class="btn ghost" data-act="deckopen">Riprendi la domanda pescata</button>`:'';
   return `<section class="card"><div class="qhead"><div><h3 style="font-size:22px">Il mazzo</h3><p class="note">${total} domande${on?' + '+(DECK.filter(q=>q.hot).length+S.custom.filter(c=>c.hot).length)+' hot':''} · ${pool} in "${esc(dcatName(cat))}" · comprese le vostre</p></div></div>
-   <label class="selw"><span class="eyebrow">Categoria</span><select data-sel="deckcat" aria-label="Categoria del mazzo">${DCATS.map(c=>`<option value="${c[0]}" ${cat===c[0]?'selected':''}>${isHot(c[0])&&!on?'Hot 18+ (bloccato)':esc(c[1])}</option>`).join('')}</select></label>${body}</section>${dr&&done(ans('A',dr.it.key))&&done(ans('B',dr.it.key))?chatHTML(dr.it.key,'Parlatene insieme'):''}`;
+   <label class="selw"><span class="eyebrow">Categoria</span><select data-sel="deckcat" aria-label="Categoria del mazzo">${DCATS.map(c=>`<option value="${c[0]}" ${cat===c[0]?'selected':''}>${isHot(c[0])&&!on?'Hot 18+ (bloccato)':esc(c[1])}</option>`).join('')}</select></label>
+   <p class="note">Una domanda a caso, uguale per tutti e due. Si apre in una pagina a parte.</p>
+   <div class="actions"><button class="btn" data-act="draw">${heartSvg()}Pesca una domanda</button>${resume}</div></section>`;
+}
+/* La domanda pescata: pagina a parte, così il Quiz resta un elenco di sezioni */
+function deckQHTML(){
+  const dr=drawIt();
+  if(!dr){S.view=null;return quizHTML()}
+  const it=dr.it, q=dr.q, both=done(ans('A',it.key))&&done(ans('B',it.key));
+  const kind=q.mine?(q.o?'Vostra':'Vostra · risposta libera'):q.who?'Chi dei due?':!q.o?'Risposta libera':q.t.indexOf('Preferisci…')===0?'Preferisci':'Sinceramente', ctag=(!q.hot&&q.cat)?dcatName(q.cat):'';
+  return headerHTML()+`<section class="card"><span class="tag ${q.hot?'hot':''}">${q.hot?'Hot · ':''}${esc(kind)}${ctag?' · '+esc(ctag):''}</span><h3 class="qtext">${esc(it.t)}</h3>${answerBlock(it)}
+   <div class="actions"><button class="btn ${both?'':'ghost'}" data-act="draw">${heartSvg()}${both?'Pesca un\'altra':'Salta'}</button></div></section>${both?chatHTML(it.key,'Parlatene insieme'):''}${backBtn('back','Torna al quiz')}`;
 }
 function quickHTML(){
   const ns=[5,10,20,30], on=hotOn(), q=S.quick&&S.quick.ids&&S.quick.ids.length;
@@ -1276,7 +1269,8 @@ document.addEventListener('click',e=>{
     if(!S.canWrite){toast(RO);break}
     const dc=(isHot(S.deckCat)&&!hotOn())?'all':(S.deckCat||'all'), n=drawNext(dc); if(n===null){toast('Nessuna domanda in questa categoria.');break} S.draw=n;
     if(S.mode==='shared')db.doc('couple/draw').set({i:n,at:Date.now()}).catch(()=>toast('Non riesco a pescare.')); else lsSave();
-    render(true);break}
+    S.view={t:'deckq'};S.tab='quiz';go();break}
+  case 'deckopen': S.view={t:'deckq'};S.tab='quiz';go();break;
   case 'pcat': S.pcat=t.dataset.c;render(true);break;
   case 'deckcat': S.deckCat=t.dataset.c; if(isHot(S.deckCat)&&!hotOn()){S.deckCat='all';toast('Servono il sì di tutti e due, nella sezione Noi.')} render(true);break;
   case 'quickn': S.quickN=+t.dataset.n;render(true);break;

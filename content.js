@@ -193,39 +193,40 @@ const HONEST=[
 ];
 const NEVER=[`dare un nome a un oggetto`,`guardare un film d'amore da solo/a`,`scrivere una lettera d'amore`,`dire «ti amo» troppo presto`,`piangere di gioia`,`fare una sorpresa finita male`,`dormire in tenda`,`inventare una scusa per non uscire`,`cucinare un disastro`,`ballare in cucina`,`perdere un treno`,`arrivare in ritardo al cinema`,`cantare una serenata`,`regalare qualcosa di riciclato`,`mandare un vocale lunghissimo`,`fare una dichiarazione in pubblico`,`mentire su un regalo`,`ricevere un regalo che non ti piaceva`,`dimenticare una password importante`,`lasciare un biglietto sul frigo`,`mangiare il dolce dell'altro/a`,`fingere di dormire`,`rubare la coperta`,`baciare qualcuno in pubblico`,`guardare le stelle di notte`,`perderti in una città nuova`,`fare il bagno di notte`,`cantare sotto la doccia`,`leggere un messaggio e non rispondere`,`preparare una sorpresa per mesi`];
 /* hot (tono sensuale ma mai esplicito) */
-const HOT_PREFER=[`Un massaggio lento|Un bagno insieme`,`Luce di candela|Luci spente`,`Bacio sul collo|Bacio sulle labbra`,`Sussurri|Messaggi maliziosi`,`Un ballo lento in casa|Una serata a lume di candela`,`Una doccia insieme|Una colazione a letto`,`Il mattino|La notte`,`Fare il primo passo|Lasciarlo fare`,`Una serata in hotel|Una serata a casa`,`Vino rosso sul divano|Champagne a letto`,`Coccole lente|Passione improvvisa`,`La sua camicia|La mia camicia`,`Una benda sugli occhi|Un bacio a sorpresa`,`Un giorno di coccole|Una notte di passione`,`Una playlist romantica|Una playlist sexy`,`Un weekend in una spa|Un weekend su un'isola`,`Giochi di sguardi|Giochi di parole`,`Un bacio lungo|Tanti baci piccoli`,`Dolcezza|Audacia`,`Una lettera maliziosa|Un vocale sussurrato`,`Una cena afrodisiaca|Un dolce da dividere`,`Una sera di sorprese|Una sera di coccole`,`Un profumo che mi piace|Una maglietta che sa di te`,`Un abbraccio che dura|Un bacio che sorprende`];
-const HOT_WHO=[`fa il primo passo?`,`è più malizioso/a?`,`è più romantico/a a luci spente?`,`bacia meglio?`,`è più coccolone/a?`,`flirta di più?`,`è più passionale?`,`fa i massaggi migliori?`,`sussurra le cose più dolci?`,`arrossisce più facilmente?`,`ha la voce più sensuale?`,`è più audace?`,`si fa desiderare di più?`,`resta più a lungo in un abbraccio?`,`ha lo sguardo più magnetico?`,`è più bravo/a a sedurre con le parole?`];
+/* Hot di base: metà velate (con le emoji che ammiccano), metà esplicite. Stesso ordine e stesso numero di prima. */
+const HOT_PREFER=[`Un massaggio con l'olio 💆|Un bagno in due 🛁`,`Luce di candela 🕯️|Luci spente 🌙`,`Bacio sul collo 😘|Bacio sull'interno coscia 🔥`,`Sussurri all'orecchio 🤫|Messaggi sporchi 📱🔥`,`Un ballo lento mezzi nudi 💃|Una cena a lume di candela in intimo 🕯️`,`Una doccia insieme 🚿|Una colazione a letto, nudi 🍓`,`Sesso la mattina ☀️|Sesso la notte 🌙`,`Fare io il primo passo 😏|Lasciarti il comando 😈`,`Hotel con vasca idromassaggio 🏨|Casa nostra, tutta per noi 🏠`,`Vino rosso sul divano 🍷|Champagne a letto 🥂`,`Coccole lente 🐌|Passione improvvisa 🔥`,`La tua camicia e niente altro 👔|La mia camicia e niente altro 👕`,`Una benda sugli occhi 🙈|Polsi legati con una sciarpa 🎀`,`Un giorno di coccole 🧸|Una notte di sesso 🔥`,`Una playlist romantica 🎶|Una playlist da camera da letto 🎧🔥`,`Una spa a due 🧖|Un'isola deserta, nudi 🏝️`,`Giochi di sguardi 👀|Giochi di parole sporche 🗣️🔥`,`Un bacio lunghissimo 💋|Tanti baci in giro per il corpo 💋💋`,`Dolcezza 🍯|Audacia 🌶️`,`Una lettera maliziosa ✉️|Un vocale sussurrato 🎙️`,`Una cena afrodisiaca 🦪|Panna e fragole sul corpo 🍓`,`Una sera di sorprese 🎁|Una sera di coccole 🛋️`,`Il tuo profumo 🌸|La tua maglietta che sa di te 👕`,`Un abbraccio che dura 🤗|Un bacio che sorprende 😘`];
+const HOT_WHO=[`fa il primo passo? 😏`,`è più malizioso/a? 😈`,`è più passionale a luci spente? 🌙`,`bacia meglio? 💋`,`è più coccolone/a? 🧸`,`flirta di più? 😉`,`è più focoso/a? 🔥`,`fa i massaggi migliori? 💆`,`sussurra le cose più sporche? 🤫`,`arrossisce più facilmente? 🙈`,`ha la voce più sensuale? 🎙️`,`è più audace a letto? 🌶️`,`si fa desiderare di più? 😏`,`prolunga di più i preliminari? ⏳`,`ha lo sguardo più magnetico? 👀`,`seduce meglio con le parole? 🗣️`];
 const HOT_HONEST=[
- HQ(`La cosa che mi attrae di più di te è…`,`Lo sguardo`,`Il sorriso`,`La voce`,`Le mani`),
- HQ(`Il mio punto debole è…`,`Il collo`,`Le carezze`,`I sussurri`,`I baci lenti`),
- HQ(`Il momento migliore per le coccole…`,`Mattina`,`Pomeriggio`,`Sera`,`Notte`),
- HQ(`Mi fa impazzire quando…`,`Mi guardi`,`Mi sfiori`,`Mi scrivi qualcosa`,`Mi sorprendi`),
- HQ(`La serata a due ideale è…`,`Luci basse e musica`,`Cena e vino`,`Film sotto le coperte`,`Un bagno caldo`),
- HQ(`Un bacio perfetto è…`,`Lento`,`Improvviso`,`Lungo`,`Sul collo`),
- HQ(`Per farmi sorridere maliziosamente basta…`,`Un messaggio`,`Uno sguardo`,`Un sussurro`,`Un complimento`),
- HQ(`La cosa più sexy che indossi è…`,`Una camicia`,`Un profumo`,`Un sorriso`,`Niente di particolare`),
- HQ(`Mi piace essere sorpreso/a con…`,`Un invito a sorpresa`,`Una candela accesa`,`Una benda sugli occhi`,`Una notte fuori`),
- HQ(`Preferisco essere…`,`Corteggiato/a`,`Sorpreso/a`,`Conquistato/a`,`Un po' di tutto`),
- HQ(`Una fantasia romantica che mi incuriosisce…`,`Una notte in hotel`,`Un bagno a lume di candela`,`Una serata a sorpresa`,`Una vacanza solo noi`),
- HQ(`Quanto mi piace essere cercato/a…`,`Tantissimo`,`Abbastanza`,`Dipende dall'umore`,`Dipende dal giorno`),
- HQ(`Mi sento desiderato/a quando…`,`Mi guardi`,`Mi dici qualcosa`,`Mi tocchi la mano`,`Mi cerchi`),
- HQ(`La parte della giornata più intima per me…`,`L'alba`,`Il tramonto`,`La sera tardi`,`La notte`),
- HQ(`Un gioco di coppia che proverei…`,`Un gioco di sguardi`,`Un gioco di carte`,`Un gioco di ruolo leggero`,`Un gioco dei baci`),
- HQ(`Per rompere il ghiaccio preferisco…`,`Un complimento`,`Un bacio`,`Un messaggio malizioso`,`Un massaggio`),
- HQ(`Quanto sono romantico/a a luci spente…`,`Molto`,`Abbastanza`,`Poco`,`Dipende`),
- HQ(`Una cosa che vorrei fare più spesso insieme…`,`Un massaggio`,`Un bagno`,`Un ballo`,`Una serata senza telefono`),
- HQ(`Un luogo insolito per un bacio…`,`In ascensore`,`Sotto la pioggia`,`In riva al mare`,`Su un balcone`),
- HQ(`Per me la sensualità è…`,`Gli sguardi`,`Le parole`,`Il tocco`,`L'atmosfera`),
- HQ(`La mia parola più dolce a letto…`,`Un sussurro`,`Un nome`,`Un complimento`,`Il silenzio`),
- HQ(`Mi piace quando prendi l'iniziativa…`,`Spesso`,`Ogni tanto`,`Mai, la prendo io`,`Dipende`),
- HQ(`Un'idea per una serata piccante…`,`Cena e sorpresa`,`Ballo lento`,`Il gioco dei sì e dei no`,`Un massaggio`),
- HQ(`La cosa che mi ricorda la nostra intimità…`,`Un profumo`,`Una canzone`,`Un posto`,`Una frase`),
- HQ(`Se dovessi scrivere un biglietto malizioso direi…`,`Una frase dolce`,`Una frase audace`,`Una battuta`,`Niente, lo dico a voce`),
- HQ(`La stanza della casa che preferisco per noi…`,`Il divano`,`La camera`,`La cucina`,`Il balcone`),
- HQ(`Un'abitudine romantica da aggiungere…`,`Una candela a cena`,`Un bacio di buongiorno`,`Un ballo lento`,`Un biglietto a sorpresa`),
- HQ(`Mi piace sentirmi dire…`,`Che sono bello/a`,`Che ti manco`,`Che mi desideri`,`Che mi ami`)
+ HQ(`La cosa che mi attrae di più di te è… 😍`,`Lo sguardo 👀`,`Il sorriso`,`La voce 🎙️`,`Le mani ✋`),
+ HQ(`Il mio punto debole è… 🍒`,`Il collo 😘`,`Le carezze`,`Il petto`,`L'interno coscia 🔥`),
+ HQ(`Il momento migliore per le coccole… 🛏️`,`Mattina ☀️`,`Pomeriggio`,`Sera 🌆`,`Notte 🌙`),
+ HQ(`Mi fa impazzire quando… 😈`,`Mi guardi 👀`,`Mi sfiori ✋`,`Mi scrivi qualcosa di sporco 📱`,`Mi prendi senza preavviso 🔥`),
+ HQ(`La serata a due ideale è… 🕯️`,`Luci basse e musica 🎶`,`Cena e vino 🍷`,`Film sotto le coperte 🎬`,`Un bagno caldo che finisce a letto 🛁🔥`),
+ HQ(`Un bacio perfetto è… 💋`,`Lento`,`Improvviso`,`Lungo`,`Con la lingua 👅`),
+ HQ(`Per farmi sorridere maliziosamente basta… 😏`,`Un messaggio 📱`,`Uno sguardo 👀`,`Un sussurro 🤫`,`Una mano sul sedere 🍑`),
+ HQ(`La cosa più sexy che indossi è… 👙`,`Una camicia 👔`,`Un profumo 🌸`,`Un sorriso`,`Niente 😈`),
+ HQ(`Mi piace essere sorpreso/a con… 🎁`,`Un invito a sorpresa`,`Una candela accesa 🕯️`,`Una benda sugli occhi 🙈`,`Un bacio tra le gambe 😈`),
+ HQ(`Preferisco essere… 😏`,`Corteggiato/a`,`Sorpreso/a`,`Conquistato/a`,`Preso/a con forza 🔥`),
+ HQ(`Una fantasia che mi incuriosisce… 😈`,`Una notte in hotel 🏨`,`Un bagno a lume di candela 🕯️`,`Un gioco di ruolo 🎭`,`Sesso in un posto pubblico 🙊`),
+ HQ(`Quanto mi piace essere cercato/a… 💞`,`Tantissimo`,`Abbastanza`,`Dipende dall'umore`,`Soprattutto quando sono eccitato/a 🔥`),
+ HQ(`Mi sento desiderato/a quando… 🔥`,`Mi guardi 👀`,`Mi dici qualcosa all'orecchio 🤫`,`Mi tocchi la mano ✋`,`Mi spogli con gli occhi 😈`),
+ HQ(`La parte della giornata più intima per me… 🌙`,`L'alba`,`Il tramonto 🌅`,`La sera tardi`,`La notte`),
+ HQ(`Un gioco di coppia che proverei… 🎲`,`Un gioco di sguardi 👀`,`Un gioco di carte 🃏`,`Un gioco di ruolo 🎭`,`Un gioco con bende e polsi legati 🎀`),
+ HQ(`Per rompere il ghiaccio preferisco… 🧊`,`Un complimento`,`Un bacio 💋`,`Un messaggio malizioso 📱`,`Una mano sotto la maglietta ✋`),
+ HQ(`Quanto sono audace a luci spente… 🌙`,`Molto 🔥`,`Abbastanza`,`Poco`,`Dipende dall'umore`),
+ HQ(`Una cosa che vorrei fare più spesso insieme… 💞`,`Un massaggio 💆`,`Un bagno 🛁`,`Un ballo 💃`,`Fare l'amore la mattina ☀️`),
+ HQ(`Un luogo insolito per un bacio… 💋`,`In ascensore 🛗`,`Sotto la pioggia ☔`,`In riva al mare 🌊`,`In auto, di notte 🚗`),
+ HQ(`Per me la sensualità è… 🔥`,`Gli sguardi 👀`,`Le parole 🗣️`,`Il tocco ✋`,`L'atmosfera 🕯️`),
+ HQ(`La mia parola più dolce a letto… 🛏️`,`Un sussurro 🤫`,`Un nome`,`Un complimento`,`Un gemito 😮‍💨`),
+ HQ(`Mi piace quando prendi l'iniziativa… 😏`,`Spesso`,`Ogni tanto`,`Mai, la prendo io`,`Quando sono già nudo/a 😈`),
+ HQ(`Un'idea per una serata piccante… 🌶️`,`Cena e sorpresa 🎁`,`Ballo lento 💃`,`Strip poker 🃏`,`Massaggio con olio 💆`),
+ HQ(`La cosa che mi ricorda la nostra intimità… 💞`,`Un profumo 🌸`,`Una canzone 🎶`,`Un posto`,`Una tua frase sporca 🤭`),
+ HQ(`Se dovessi scrivere un biglietto osé direi… ✉️`,`Una frase dolce`,`Una frase audace 😈`,`Una battuta`,`Cosa ti farò stanotte 🔥`),
+ HQ(`La stanza della casa che preferisco per noi… 🏠`,`Il divano 🛋️`,`La camera 🛏️`,`La cucina 🍳`,`La doccia 🚿`),
+ HQ(`Un'abitudine da aggiungere… 💫`,`Una candela a cena 🕯️`,`Un bacio di buongiorno ☀️`,`Un ballo lento 💃`,`Un momento solo nostro, ogni giorno 🔥`),
+ HQ(`Mi piace sentirmi dire… 👂`,`Che sono bello/a`,`Che ti manco`,`Che mi desideri 😈`,`Cosa vorresti farmi 🔥`)
 ];
-const HOT_NEVER=[`mandare un messaggio malizioso`,`baciare qualcuno sotto la pioggia`,`fare un bagno in due`,`ballare lento in cucina`,`arrossire per un complimento`,`sognare un bacio`,`scrivere un biglietto malizioso`,`fare un massaggio a una persona amata`,`dare un bacio sul collo`,`fare un gioco di sguardi`];
+const HOT_NEVER=[`mandare un messaggio sporco 📱🔥`,`baciare qualcuno sotto la pioggia ☔`,`fare sesso sotto la doccia 🚿`,`ballare lento in cucina, mezzi nudi 💃`,`fare un sogno erotico con me 🌙`,`scrivere un biglietto osé ✉️`,`fare un massaggio sensuale 💆`,`lasciare un succhiotto 😘`,`fare un gioco di sguardi finito a letto 👀`,`toccarti pensando a me 🙈`];
 
 /* Mazzo unico. Ordine fisso: ref = 'k' + indice. */
 const DECK=[];
@@ -1854,6 +1855,27 @@ const RECAP=[
  {t:`Che voto dai alla nostra salute e al nostro riposo (1-10)?`,o:null}
 ];
 
+
+
+/* Emoji sulle domande hot: velate o esplicite, giocano con i simboli. Si applica a tutto il hot che non le ha già. */
+const EMO_RE=/\p{Extended_Pictographic}/u;
+const EMO_K=[[/bacio|baci|bacia|labbra/i,'💋'],[/massagg/i,'💆'],[/doccia|bagno|vasca/i,'🚿'],[/candel/i,'🕯️'],[/vino|champagne|brind/i,'🍷'],[/music|canzon|playlist|ballo|ballare|balla/i,'🎶'],[/sussurr/i,'🤫'],[/bend/i,'🙈'],[/ghiaccio/i,'🧊'],[/panna|cioccolat|fragol/i,'🍓'],[/olio/i,'💧'],[/sedere|sculacc|fondoschiena/i,'🍑'],[/hotel/i,'🏨'],[/sguard|occhi/i,'👀'],[/notte|stanotte|sera/i,'🌙'],[/mattin|sveglia|colazione/i,'☀️'],[/orgasm|godere|goduto|venire/i,'💦'],[/nud|spogli|intimo|lingerie|vestit/i,'👙'],[/oral|lingua|lecca/i,'👅'],[/seno|petto|capezzol/i,'🍒'],[/legat|polsi|sciarpa/i,'🎀'],[/gioc|dadi|carte|ruolo/i,'🎲'],[/collo|orecchio/i,'😘'],[/mani|tocc|carezz|sfior/i,'✋'],[/sesso|letto|fare l'amore|posizion|passion/i,'🔥'],[/fantasi|sogno/i,'😈']];
+const EMO_X=['🍆💦','🍑🔥','🍒😈','😈💦','🔥🍑','👅🍒','🍆🍑','💦😏'];
+const EMO_D={flirt:'😏',fant:'😈',int:'💞',spicy:'🌶️',xxx:'🔥'};
+const hsh=t=>{let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))>>>0;return h};
+function decor(t,sub){
+  if(EMO_RE.test(t))return t;
+  const k=EMO_K.find(x=>x[0].test(t)); let e=k?k[1]:(EMO_D[sub]||'🔥');
+  if(sub==='xxx')e+=EMO_X[hsh(t)%EMO_X.length]; else if(sub==='spicy'&&hsh(t)%2)e+='🍑';
+  return t.replace(/\s*$/,'')+' '+e;
+}
+const decorO=(o,sub)=>o?o.map(x=>(x===NOPE||EMO_RE.test(x))?x:(EMO_K.find(k=>k[0].test(x))?x+' '+EMO_K.find(k=>k[0].test(x))[1]:x)):o;
+DECK.forEach(q=>{if(!q.hot||q.who)return; if(q.t!=='Preferisci…')q.t=decor(q.t,q.sub); q.o=decorO(q.o,q.sub)});
+HOTPACKS.forEach(p=>p.qs.forEach(q=>{q.t=decor(q.t,'int'); q.o=decorO(q.o,'int')}));
+OBV.t.forEach(x=>{x[1]=decor(x[1],x[0]===3?'xxx':x[0]===2?'spicy':'flirt')});
+OBV.d.forEach(x=>{x[1]=decor(x[1],x[0]===3?'xxx':x[0]===2?'spicy':'flirt')});
+['act','zone','how'].forEach(k=>DADI[k].forEach(x=>{const e=EMO_K.find(r=>r[0].test(x[1]));if(e&&!EMO_RE.test(x[1]))x[1]+=' '+e[1]}));
+PEGNI.hot=PEGNI.hot.map(t=>decor(t,'spicy'));
 
 window.DUC={MISSIONS:MISSIONS,PHQ:PHQ,TALK:TALK,OBV:OBV,DADI:DADI,BASE_N:BASE_N,RECAP:RECAP,SPECIALS:SPECIALS,PACKS:PACKS,HOTPACKS:HOTPACKS,DECK:DECK,PEGNI:PEGNI,IC:IC,CITIES:CITIES,STATUS:STATUS,STATUS_HOT:STATUS_HOT,NOPE:NOPE,
  counts:{prefer:PREFER.length,who:WHO.length,honest:HONEST.length,never:NEVER.length,hot:HOT_PREFER.length+HOT_WHO.length+HOT_HONEST.length+HOT_NEVER.length}};

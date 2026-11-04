@@ -88,3 +88,8 @@ Note:
 - **Foto e risposte del giorno spariscono:** il giorno dopo, le risposte e le foto delle attività del giorno, le loro chat e le missioni vengono cancellate (resta solo il segno "fatto" per la serie). Le foto date nei quiz e nel mazzo restano invece nel loro quiz.
 - **Più domande senza filtri:** 123 in tutto.
 - Per aggiornare non serve nulla di nuovo su Supabase: basta ricaricare i file (push).
+
+## Novità versione 13
+- **Home a tre blocchi:** Domanda del giorno, Sfida di coppia, Missione del giorno. La missione compare già nel blocco, con il suo testo (lo vedi solo tu), così sai cosa fare. La "Conversazione 18+" non c'è più come blocco: con l'hot sbloccato entra nella domanda del giorno come quarta domanda facoltativa, una volta su tre "senza filtri".
+- **Quiz:** il mazzo mostra solo categoria e "Pesca una domanda": la domanda si apre in una pagina a parte, e il Quiz continua con Sorprese del calendario, Quiz rapido, Le vostre domande e Quiz completi.
+- **Hot rivisto:** tutte le domande hot hanno le emoji. Alcune sono velate (con emoji che ammiccano), altre molto esplicite (🍆💦🍑🔥). Vale anche per i quiz hot, per Obbligo o verità, per i dadi e per i pegni.
