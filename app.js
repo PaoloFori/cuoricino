@@ -1,12 +1,13 @@
 /* Cuoricino v3: app principale */
 (function(){
 'use strict';
+try{if(window.top!==window.self){document.documentElement.innerHTML='';throw new Error('frame')}}catch(e){}
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 const D=window.DUC, DECK=D.DECK, ALLPACKS=D.PACKS.concat(D.HOTPACKS), CITIES=D.CITIES;
 
 /* ---------- Stato ---------- */
 const S={mode:'boot',profile:null,answers:{A:{},B:{}},slot:null,active:'A',tab:'home',view:null,
-  draw:null,deckCat:'all',quick:null,quickN:10,quickHot:false,game:null,games:{},gopen:null,gdel:null,missions:{},msn:null,pickCtx:null,keycheck:null,keyOk:true,keyErr:'',showKey:false,e2eBusy:false,scores:{A:0,B:0},play:null,freeze:false,
+  draw:null,deckCat:'all',quick:null,quickN:10,quickHot:false,game:null,games:{},gopen:null,gdel:null,missions:{},msn:null,pickCtx:null,keycheck:null,keyOk:true,keyErr:'',showKey:false,e2eBusy:false,locked:false,pinErr:'',pinFails:0,pinWait:0,pinForgot:false,rotating:false,confirmRot:false,ansLoaded:{},scores:{A:0,B:0},play:null,freeze:false,
   photos:[],events:[],stories:[],custom:[],chat:[],pcat:'all',full:{},photoView:null,confirmDel:false,confirmReset:false,
   canWrite:true,loadedP:false,slow:false,err:null,uid:null,dirty:false,photosOk:true,
   slots:{},loadedS:false,welcome:null,cloudOn:false,notifOn:false,geoOn:false,rtab:'time',ev:null,cq:null,st:'',nt:'',pickKind:null,storyTxt:'',icElim:null,icGuess:false};
@@ -1132,21 +1133,34 @@ function noiHTML(){
     ?`<div style="margin-top:14px;padding:12px;border-radius:14px;background:var(--a-soft)"><p><b>Cancello tutto dal server, per tutti e due?</b></p><p class="note" style="margin:6px 0 10px">Risposte, foto, partite, chat, storie e la coppia stessa spariscono per sempre. ${esc(nm(o))} dovrà uscire dalla coppia e ricominciare. Non si può annullare.</p><div class="actions"><button class="btn" data-act="wipe-yes">Sì, cancella tutto</button><button class="btn ghost" data-act="wipe-no">Annulla</button></div></div>`
     :`<div class="actions" style="margin-top:12px"><button class="btn ghost sm" data-act="wipe">Cancella tutti i dati dal server</button></div>`):'';
   const e2e=S.cloudOn&&cloud?(S.keycheck&&DUCrypto.has()
-    ?`<section class="card"><h3 style="font-size:20px">Cifratura 🔒 attiva</h3><p class="note" style="margin:6px 0">Foto, messaggi, risposte, note e posizione sono cifrati sul tuo telefono prima di partire: sul server c'è solo materiale illeggibile.</p>
+    ?`<section class="card"><h3 style="font-size:20px">Cifratura 🔒 attiva</h3><p class="note" style="margin:6px 0">Quasi tutto (foto, messaggi, risposte, note, posizione, partite, nomi, punteggi) è cifrato sul tuo telefono prima di partire: sul server c'è solo materiale illeggibile.</p>
       ${S.showKey?`<div style="padding:12px;border-radius:14px;background:var(--a-soft);margin:8px 0"><p class="eyebrow">La vostra chiave</p><p style="font:700 15px/1.5 monospace;word-break:break-all;margin:6px 0">${esc(DUCrypto.keyString())}</p><p class="note">Salvala in un posto sicuro. Se la perdi su tutti i telefoni, foto e messaggi non si possono più aprire, nemmeno da noi.</p><button class="btn ghost sm" data-act="copykey" style="margin-top:6px">Copia la chiave</button></div>`:''}
-      <div class="actions"><button class="btn ghost sm" data-act="showkey">${S.showKey?'Nascondi la chiave':'Mostra la chiave'}</button><button class="btn ghost sm" data-act="e2e-migrate" ${S.e2eBusy?'disabled':''}>${S.e2eBusy?'Un attimo…':'Cifra i dati già salvati'}</button></div></section>`
+      <div class="actions"><button class="btn ghost sm" data-act="showkey">${S.showKey?'Nascondi la chiave':'Mostra la chiave'}</button><button class="btn ghost sm" data-act="e2e-migrate" ${S.e2eBusy?'disabled':''}>${S.e2eBusy?'Un attimo…':'Cifra i dati già salvati'}</button></div>
+      ${S.confirmRot?`<div style="margin-top:12px;padding:12px;border-radius:14px;background:var(--a-soft)"><p><b>Cambio la chiave?</b></p><p class="note" style="margin:6px 0 10px">Serve se pensi che la chiave sia stata vista da qualcuno, o dopo aver perso un telefono. Tutto viene ricifrato con una chiave nuova e ${esc(nm(other(me())))} dovrà inserirla. Durante il cambio tenete l'app aperta, ci vuole circa un minuto.</p><div class="actions"><button class="btn" data-act="rot-yes">Sì, cambia la chiave</button><button class="btn ghost" data-act="rot-no">Annulla</button></div></div>`
+        :`<div class="actions" style="margin-top:8px"><button class="btn ghost sm" data-act="rot" ${S.e2eBusy?'disabled':''}>Cambia la chiave</button></div>`}</section>`
     :!S.keycheck
     ?`<section class="card"><h3 style="font-size:20px">Cifratura 🔓 non attiva</h3><p class="note" style="margin:6px 0 10px">Per ora foto e messaggi stanno sul server leggibili da chi gestisce il progetto. Attivando la cifratura diventano illeggibili anche per il server: solo i vostri due telefoni, che hanno la chiave, li aprono. Ti darò una chiave da passare a ${esc(nm(o))}.</p><div class="actions"><button class="btn" data-act="e2e-on" ${S.e2eBusy?'disabled':''}>Attiva la cifratura</button></div></section>`
     :''):'';
+  const lockSel=[[0,'Subito'],[60,'Dopo 1 minuto'],[300,'Dopo 5 minuti'],[900,'Dopo 15 minuti']].map(x=>`<option value="${x[0]}" ${(+(lget(LOCKKEY)===null?60:lget(LOCKKEY)))===x[0]?'selected':''}>${x[1]}</option>`).join('');
+  const pinCard=S.cloudOn&&cloud&&S.keycheck&&DUCrypto.has()?(DUCrypto.hasPin()
+    ?`<section class="card"><h3 style="font-size:20px">Blocco con PIN 🔐 attivo</h3><p class="note" style="margin:6px 0 10px">La chiave è protetta dal PIN: senza, chi prende il telefono non può aprire i vostri dati. L'app si blocca da sola quando la lasci.</p>
+      <label class="selw"><span class="eyebrow">Si blocca</span><select data-sel="lockafter" aria-label="Blocco automatico">${lockSel}</select></label>
+      ${S.pinMode==='chg'?`<form class="form" data-form="pinchg" novalidate><label for="f-pin">PIN attuale</label><input id="f-pin" type="password" autocomplete="current-password"><label for="f-pin2">PIN nuovo (almeno 6 caratteri)</label><input id="f-pin2" type="password" autocomplete="new-password"><label for="f-pin3">Ripeti il PIN nuovo</label><input id="f-pin3" type="password" autocomplete="new-password"><p class="err" id="err" role="alert" hidden></p><button class="btn" type="submit">Cambia il PIN</button><button class="btn ghost" type="button" data-act="pin-cancel">Annulla</button></form>`
+       :S.pinMode==='off'?`<form class="form" data-form="pinoff" novalidate><label for="f-pin">Scrivi il PIN per toglierlo</label><input id="f-pin" type="password" autocomplete="current-password"><p class="err" id="err" role="alert" hidden></p><button class="btn" type="submit">Togli il PIN</button><button class="btn ghost" type="button" data-act="pin-cancel">Annulla</button></form>`
+       :`<div class="actions"><button class="btn ghost sm" data-act="pin-chg">Cambia il PIN</button><button class="btn ghost sm" data-act="pin-off">Togli il PIN</button></div>`}</section>`
+    :`<section class="card"><h3 style="font-size:20px">Blocco con PIN 🔓 non attivo</h3><p class="note" style="margin:6px 0 10px">Ora la chiave sta nel telefono senza protezione: chi lo ha in mano sbloccato può leggerla. Con un PIN (meglio una frase lunga) la chiave viene chiusa, e l'app si blocca da sola quando la lasci.</p>
+      <form class="form" data-form="pinset" novalidate><label for="f-pin">Scegli un PIN (almeno 6 caratteri)</label><input id="f-pin" type="password" autocomplete="new-password"><label for="f-pin2">Ripetilo</label><input id="f-pin2" type="password" autocomplete="new-password"><p class="err" id="err" role="alert" hidden></p><button class="btn" type="submit">Attiva il PIN</button></form>
+      <p class="note" style="margin-top:8px">Se lo dimentichi si reimposta con la chiave di cifratura: tienila al sicuro.</p></section>`):'';
   const privacy=`<section class="card"><h3 style="font-size:20px">Privacy e dati</h3>
    <ul class="dlist">
     <li><b>Dove stanno:</b> nel progetto Supabase che avete creato (regione scelta da voi), non su GitHub e non da altri.</li>
     <li><b>Chi li vede:</b> solo voi due. Le regole del database mostrano ogni riga soltanto ai telefoni della vostra coppia.</li>
-    <li><b>Cifratura:</b> i dati viaggiano cifrati (HTTPS) e il servizio li cifra sul disco. ${S.keycheck?'In più foto, messaggi, risposte, note e posizione sono <b>cifrati da telefono a telefono</b>: sul server sono illeggibili, anche per chi gestisce il progetto.':'Non sono ancora cifrati da telefono a telefono: chi gestisce il progetto può leggerli dal pannello. Puoi attivare la cifratura qui sopra.'}</li>
+    <li><b>Cifratura:</b> i dati viaggiano cifrati (HTTPS) e il servizio li cifra sul disco. ${S.keycheck?'In più <b>quasi tutto è cifrato da telefono a telefono</b> (foto, messaggi, risposte, partite, nomi, punteggi): sul server è illeggibile, anche per chi gestisce il progetto. Restano visibili solo etichette tecniche e le date di scrittura.':'Non sono ancora cifrati da telefono a telefono: chi gestisce il progetto può leggerli dal pannello. Puoi attivare la cifratura qui sopra.'}</li>
     <li><b>Come vengono usati:</b> solo per far funzionare l'app. Nessuna pubblicità, nessuna analisi, nessun tracciamento, nessuna vendita.</li>
     <li><b>Cosa sparisce da solo:</b> risposte, foto e chat delle attività del giorno il giorno dopo; le storie dopo 3 giorni.</li>
-    <li><b>Servizi esterni:</b> i caratteri da Google Fonts e, aprendo la mappa, le tessere di OpenStreetMap.</li>
+    <li><b>Servizi esterni:</b> nessuno, tranne la mappa: aprendola, le tessere arrivano da OpenStreetMap (che vede quali zone guardi, non chi sei). I caratteri sono ospitati nell'app.</li>
     <li><b>Non salviamo:</b> email, password, numero di telefono. La posizione è approssimata.</li>
+    <li><b>Telefono perso:</b> da Noi puoi scollegare i vecchi telefoni e cambiare la chiave; con il PIN, chi trova il telefono non apre i vostri dati.</li>
    </ul>${wipe}</section>`;
   const t=todayStr(), n=Math.max(0,dnum(t)-dnum(since())), km=distKm(), sN=streak();
   const widgets=`<h3 style="font-size:22px">Widget</h3><p class="note" style="margin-top:-8px">Anteprima di come appariranno sulla Home. I widget veri richiedono la versione nativa per iOS.</p>
@@ -1168,7 +1182,7 @@ function noiHTML(){
    <p class="err" id="err" role="alert" hidden></p>
    <button class="btn" type="submit">Salva</button>
    <button class="btn ghost" type="button" data-act="geo" style="margin-top:8px">Aggiorna la posizione adesso</button>
-  </form>${hot}${prefs}${cloudCard}${e2e}${privacy}${widgets}${info}${reset}`;
+  </form>${hot}${prefs}${cloudCard}${e2e}${pinCard}${privacy}${widgets}${info}${reset}`;
 }
 
 /* --- Navigazione --- */
@@ -1220,10 +1234,55 @@ async function e2eMigrate(){
   S.e2eBusy=true; render(true);
   try{
     const r=await cloud.migrate(n=>toast('Cifro i dati già salvati… '+n));
-    if(S.mode==='shared'&&me())queueWrite(me());
+    safeRewriteMine();
     toast('Fatto: '+r.done+' elementi cifrati. Le tue risposte vecchie si cifrano alla prossima modifica.');
   }catch(e){toast('Non sono riuscito a cifrare tutto. Riprova.')}
   S.e2eBusy=false; render(true);
+}
+
+const LOCKKEY='cuoricino-lock-after';
+const syncFreeze=()=>{try{DUCrypto.freeze((S.keycheck&&!S.keyOk)||S.rotating)}catch(e){}};
+/* riscrive le mie risposte (per cifrarle) solo se le ho già lette: altrimenti si rischia di sovrascriverle con un elenco vuoto */
+const safeRewriteMine=()=>{const m=me();if(S.mode==='shared'&&m&&S.ansLoaded[m])queueWrite(m)};
+let hiddenAt=0;
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'){hiddenAt=Date.now();document.body.classList.add('cover')} /* nell'elenco delle app aperte non si vede il contenuto */
+  else{
+    document.body.classList.remove('cover');
+    try{
+      if(hiddenAt&&window.DUCrypto&&DUCrypto.hasPin()&&DUCrypto.has()){
+        const la=lget(LOCKKEY), secs=la===null?60:+la;
+        if(secs>=0&&(Date.now()-hiddenAt)/1000>=secs){DUCrypto.lock();location.reload()}
+      }
+    }catch(e){}
+    hiddenAt=0;
+  }
+});
+function lockHTML(){
+  const wait=Math.max(0,Math.ceil((S.pinWait-Date.now())/1000));
+  if(S.pinForgot)return `<div class="hero2"><div class="logo">${markSvg(96)}</div><h1>PIN dimenticato</h1><p class="lead">Per scegliere un PIN nuovo serve la chiave di cifratura (quella lunga).</p></div>
+   <form class="card form" data-form="pinreset" novalidate><label for="f-key">Chiave di cifratura</label><textarea id="f-key" rows="3" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX-…"></textarea>
+    <label for="f-pin">Nuovo PIN (almeno 6 caratteri)</label><input id="f-pin" type="password" autocomplete="new-password" autocapitalize="off">
+    ${S.pinErr?`<p class="err" role="alert">${esc(S.pinErr)}</p>`:''}<button class="btn" type="submit">Imposta il nuovo PIN</button><button class="btn ghost" type="button" data-act="pin-back">Indietro</button></form>`;
+  return `<div class="hero2"><div class="logo">${markSvg(96)}</div><h1>Cuoricino</h1><p class="lead">Inserisci il tuo PIN per aprire i vostri dati.</p></div>
+   <form class="card form" data-form="pin" novalidate><label for="f-pin">PIN</label><input id="f-pin" type="password" autocomplete="current-password" autocapitalize="off" ${wait?'disabled':''}>
+    ${S.pinErr?`<p class="err" role="alert">${esc(S.pinErr)}${wait?' Riprova tra '+wait+' secondi.':''}</p>`:''}<button class="btn" type="submit" ${wait?'disabled':''}>Sblocca</button>
+    <button class="link" type="button" data-act="pin-forgot">PIN dimenticato</button></form>
+   <p class="note">Senza il PIN la chiave di cifratura resta chiusa su questo telefono.</p>`;
+}
+async function e2eRotate(resume){
+  if(!cloud||!DUCrypto.has())return;
+  S.e2eBusy=true; S.confirmRot=false; render(true);
+  try{
+    if(!resume&&!(await DUCrypto.beginRotation()))throw new Error('avvio');
+    const r=await cloud.rotate(n=>toast('Ricifro i dati… '+n));
+    S.showKey=true; toast('Fatto: la chiave nuova è in uso ('+r.done+' elementi ricifrati). Passala all\'altra persona.');
+  }catch(e){toast('Il cambio non è finito. Riapri l\'app: riprende da dove si era fermato.')}
+  S.e2eBusy=false; render(true);
+}
+function rotatingHTML(){
+  return `<div class="hero2"><div class="logo">${markSvg(96)}</div><h1>Un momento…</h1><p class="lead">${esc(nm(other(me())))} sta cambiando la chiave di cifratura. Appena finisce ti chiederò la chiave nuova.</p></div>
+   <section class="card"><p class="note">Nel frattempo non scrivere e non chiudere l'app: i dati si stanno ricifrando.</p></section>`;
 }
 function gateHTML(){
   return `<div class="hero2"><div class="logo">${markSvg(96)}</div><h1>Cuoricino</h1><p class="lead">I vostri dati sono cifrati. Per aprirli serve la chiave di cifratura.</p></div>
@@ -1234,7 +1293,9 @@ function gateHTML(){
    <p class="note">La chiave resta solo su questo telefono: il server non la riceve mai.</p>`;
 }
 function html(){
+  if(S.locked)return lockHTML();
   if(S.mode==='shared'&&S.cloudOn&&S.keycheck&&!S.keyOk)return gateHTML();
+  if(S.mode==='shared'&&S.cloudOn&&S.rotating)return rotatingHTML();
   if(S.mode==='boot')return loadingHTML();
   if(S.mode==='welcome')return welcomeHTML();
   if(S.err)return errorHTML();
@@ -1268,7 +1329,8 @@ document.addEventListener('input',e=>{
   if(p.length===1)S[p[0]]=v; else{S[p[0]]=S[p[0]]||{};S[p[0]][p[1]]=v}
 });
 document.addEventListener('change',e=>{
-  const t=e.target; if(t&&t.dataset&&t.dataset.sel==='deckcat'){S.deckCat=t.value;if(isHot(S.deckCat)&&!hotOn()){S.deckCat='all';toast('Servono il sì di tutti e due, nella sezione Noi.')}render(true);return}
+  const t=e.target; if(t&&t.dataset&&t.dataset.sel==='lockafter'){lset(LOCKKEY,t.value);toast('Fatto');return}
+  if(t&&t.dataset&&t.dataset.sel==='deckcat'){S.deckCat=t.value;if(isHot(S.deckCat)&&!hotOn()){S.deckCat='all';toast('Servono il sì di tutti e due, nella sezione Noi.')}render(true);return}
   if(t&&t.type==='checkbox'&&t.dataset&&t.dataset.d){const p=t.dataset.d.split('.');S[p[0]]=S[p[0]]||{};S[p[0]][p[1]]=t.checked}
 });
 
@@ -1383,6 +1445,14 @@ document.addEventListener('click',e=>{
   case 'w-go': startCloud();break;
   case 'w-retry': startCloud();break;
   case 'w-local': startLocal();break;
+  case 'rot': S.confirmRot=true;render(true);break;
+  case 'rot-no': S.confirmRot=false;render(true);break;
+  case 'rot-yes': e2eRotate(false);break;
+  case 'pin-chg': S.pinMode='chg';render(true);break;
+  case 'pin-off': S.pinMode='off';render(true);break;
+  case 'pin-cancel': S.pinMode='';render(true);break;
+  case 'pin-forgot': S.pinForgot=true;S.pinErr='';render(true);break;
+  case 'pin-back': S.pinForgot=false;S.pinErr='';render(true);break;
   case 'copykey':{
     const k=DUCrypto.keyString(); if(!k)break;
     if(navigator.clipboard)navigator.clipboard.writeText(k).then(()=>toast('Chiave copiata')).catch(()=>toast(k)); else toast(k); break}
@@ -1489,6 +1559,41 @@ document.addEventListener('submit',e=>{
       if(ok){await DUCrypto.setKey(v);S.keyErr='';toast('Chiave corretta');setTimeout(()=>{try{location.reload()}catch(x){}},400)}
       else{S.keyErr='La chiave non è corretta. Controlla di averla copiata tutta.';render(true)}
     }); return;
+  }
+  if(kind==='pin'||kind==='pinreset'){
+    if(kind==='pin'&&Date.now()<S.pinWait)return;
+    blur();
+    if(kind==='pin'){
+      DUCrypto.unlock(document.getElementById('f-pin').value).then(ok=>{
+        if(ok){S.locked=false;S.pinErr='';S.pinFails=0;boot2()}
+        else{S.pinFails++;S.pinErr='PIN non corretto.';if(S.pinFails>=3)S.pinWait=Date.now()+Math.min(300,5*Math.pow(2,S.pinFails-3))*1000;render(true);if(S.pinWait>Date.now())setTimeout(()=>render(true),1000*Math.ceil((S.pinWait-Date.now())/1000)+50)}
+      });
+    }else{
+      const np=document.getElementById('f-pin').value; if(np.length<6){S.pinErr='Scegli almeno 6 caratteri.';render(true);return}
+      DUCrypto.resetPin(g('f-key'),np).then(ok=>{
+        if(ok){S.locked=false;S.pinForgot=false;S.pinErr='';toast('PIN cambiato');boot2()}
+        else{S.pinErr='La chiave non è corretta.';render(true)}
+      });
+    }
+    return;
+  }
+  if(kind==='pinset'||kind==='pinchg'||kind==='pinoff'){
+    blur(); const v=id=>{const e=document.getElementById(id);return e?e.value:''};
+    (async()=>{
+      try{
+        if(kind==='pinset'){
+          const a=v('f-pin'),b=v('f-pin2'); if(a.length<6)return fail('Scegli almeno 6 caratteri: meglio una frase che ricordi.'); if(a!==b)return fail('I due PIN non coincidono.');
+          if(await DUCrypto.protect(a)){toast('PIN attivo: la chiave ora è protetta');S.showKey=false;render(true)}
+        }else if(kind==='pinchg'){
+          if(!(await DUCrypto.unlock(v('f-pin'))))return fail('Il PIN attuale non è corretto.');
+          const a=v('f-pin2'),b=v('f-pin3'); if(a.length<6)return fail('Il PIN nuovo deve avere almeno 6 caratteri.'); if(a!==b)return fail('I due PIN nuovi non coincidono.');
+          if(await DUCrypto.protect(a)){toast('PIN cambiato');S.pinMode='';render(true)}
+        }else{
+          if(!(await DUCrypto.unlock(v('f-pin'))))return fail('Il PIN non è corretto.');
+          if(await DUCrypto.removePin()){toast('PIN tolto: la chiave resta in chiaro su questo telefono');S.pinMode='';render(true)}
+        }
+      }catch(e){fail('Qualcosa è andato storto. Riprova.')}
+    })(); return;
   }
   if(kind==='join'){
     const code=g('f-code'); if(!code)return fail('Scrivi il codice.');
@@ -1617,15 +1722,19 @@ async function startShared(dbm,um,id,viaCloud){
     S.loadedS=true; computeSlot(); autoClaim(); geoUpdate(); rq();
   },()=>{});
   ['A','B'].forEach(k=>db.doc('answers/'+k).onSnapshot(snap=>{
-    const before=S.answers[k]||{}; S.answers[k]=snap.exists?snap.data():{};
+    const before=S.answers[k]||{}; S.answers[k]=snap.exists?snap.data():{}; S.ansLoaded[k]=true;
     watchPartner(k,before); rq();
   },()=>{}));
   db.doc('couple/draw').onSnapshot(snap=>{const d=snap.exists?snap.data():null;S.draw=d?validDraw(d.i):null;rq()},()=>{});
   db.doc('couple/quick').onSnapshot(snap=>{S.quick=snap.exists?snap.data():null;rq()},()=>{});
   db.doc('couple/keycheck').onSnapshot(snap=>{
     S.keycheck=snap.exists?(snap.data().v||null):null;
-    if(!S.keycheck){S.keyOk=true;rq();return}
-    DUCrypto.verify(S.keycheck).then(ok=>{S.keyOk=ok;rq()});
+    if(!S.keycheck){S.keyOk=true;syncFreeze();rq();return}
+    DUCrypto.verify(S.keycheck).then(ok=>{S.keyOk=ok;syncFreeze();rq()});
+  },()=>{});
+  db.doc('couple/rotating').onSnapshot(snap=>{
+    S.rotating=snap.exists&&!DUCrypto.rotating(); /* chi sta cambiando la chiave non si ferma da solo */
+    syncFreeze(); rq();
   },()=>{});
   db.collection('missions').orderBy('at','desc').limit(14).onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{o[d.id]=d.data()});S.missions=o;rq()},()=>{});
   db.doc('couple/scores').onSnapshot(snap=>{S.scores=snap.exists?Object.assign({A:0,B:0},snap.data()):{A:0,B:0};rq()},()=>{});
@@ -1641,10 +1750,18 @@ async function startShared(dbm,um,id,viaCloud){
     },()=>{});
   });
   PUSH.sync();
+  if(window.DUCrypto&&DUCrypto.has()&&DUCrypto.rotating())setTimeout(()=>e2eRotate(true),2500);
+  else if(window.DUCrypto&&DUCrypto.has()&&viaCloud&&lget('cuoricino-e2e-v3')!=='1'){
+    /* una volta per telefono: porta al formato nuovo (tutti i campi cifrati e legati al loro posto) */
+    setTimeout(async()=>{try{await cloud.migrate(null,false);safeRewriteMine();lset('cuoricino-e2e-v3','1')}catch(e){}},9000);
+  }
   render();
 }
 async function boot(){
-  try{if(window.DUCrypto&&DUCrypto.supported())await DUCrypto.load()}catch(e){}
+  try{if(window.DUCrypto&&DUCrypto.supported()){const st=await DUCrypto.load(); if(st==='locked'){S.locked=true;render();return}}}catch(e){}
+  boot2();
+}
+async function boot2(){
   render();
   const C=window.claude;
   if(C&&typeof C.use==='function'){

@@ -38,7 +38,7 @@ Le partite restano salvate: puoi uscire con "← Indietro" e giocarne più d'una
 Oltre ai giochi ci sono i **quiz**: la domanda del giorno, il mazzo con più di mille domande divise per categoria, quiz a tema e il resoconto di fine mese. I contenuti **Hot 18+** si sbloccano solo se dicono sì tutti e due.
 
 ## Cifratura delle foto e dei messaggi 🔒
-Foto, messaggi, risposte, note e posizione vengono **cifrati sul telefono** prima di andare sul server: sul server si vede solo materiale illeggibile. La chiave non va mai al server.
+**Quasi tutto** (foto, messaggi, risposte, note, posizione, partite, nomi, punteggi) viene **cifrato sul telefono** prima di andare sul server: sul server si vede solo materiale illeggibile. La chiave non va mai al server. Restano visibili soltanto etichette tecniche, le date di scrittura e il posto A/B.
 
 **Coppia nuova:** la cifratura è già attiva. Alla creazione compare la chiave: **copiala e salvala** (gestore di password o nota privata) e passala all'altra persona in un messaggio privato o a voce.
 
@@ -50,6 +50,10 @@ Foto, messaggi, risposte, note e posizione vengono **cifrati sul telefono** prim
 5. Sull'altro telefono, dopo aver inserito la chiave, premi in **Noi** "Cifra i dati già salvati" per cifrare anche le sue risposte vecchie.
 
 **Attenzione:** se perdi la chiave su tutti i telefoni, foto e messaggi **non si riaprono più** (nemmeno da noi). Teniamene una copia al sicuro.
+
+**Blocco con PIN 🔐:** in **Noi → Blocco con PIN** scegli un PIN (almeno 6 caratteri, meglio una frase). La chiave viene chiusa nel telefono: senza PIN chi lo prende non apre i vostri dati. L'app si blocca da sola quando la lasci (subito, dopo 1, 5 o 15 minuti) e nell'elenco delle app aperte il contenuto non si vede. Se dimentichi il PIN lo reimposti con la chiave di cifratura.
+
+**Cambiare la chiave:** in **Noi → Cifratura → Cambia la chiave**. Serve se pensi che la chiave sia stata vista da qualcuno o dopo aver perso un telefono. Tutto viene ricifrato (circa un minuto: tieni l'app aperta). L'altro telefono si ferma, poi chiede la chiave nuova da incollare.
 
 **Telefono perso o sostituito:** in **Noi → Collegamento tra telefoni** premi "Ho perso un telefono: scollega i vecchi". I telefoni che non sono più tuoi non leggono più nulla dal server.
 

@@ -124,3 +124,10 @@ La cartella `tests/` contiene le prove automatiche (vedi `tests/README.md`): cif
 - **Due giochi nuovi:** **Flappy cuore** (tocca per volare tra i tubi) e **Cuore Dash** (il cuore corre, tocca per saltare spine, blocchi e buche). Stesso percorso per tutti e due, vince il punteggio più alto; 1, 3 o 5 tentativi a testa (conta il migliore).
 - **Livelli di difficoltà:** Tiro con l'arco e Mini golf hanno Facile/Normale/Difficile/Esperto. Memory arriva a 12 coppie, con l'opzione di rimescolare le carte dopo ogni errore. Tris ha il 7×7 (cinque in fila) e Forza 4 il gigante 11×9.
 - **Domande hot riviste:** controllate una per una. Una sola emoji e solo dove c'entra, e dove una frase diceva «me» o «mio» ora c'è il nome dell'altra persona, così la stessa carta ha senso per entrambi.
+
+## Novità versione 18: sicurezza al massimo
+- **Quasi tutto cifrato:** anche partite, nomi, punteggi, domanda pescata e ogni singolo campo (numeri compresi). Ogni valore è legato al suo documento e al suo campo: scambiarli o spostarli non funziona. In chiaro restano etichette tecniche, date di scrittura e il posto A/B (serve a notifiche e revoca).
+- **Blocco con PIN:** in Noi. La chiave viene chiusa con il PIN (derivazione PBKDF2, 600.000 giri); l'app si blocca da sola quando la lasci e di nascosto nell'elenco delle app.
+- **Cambia la chiave:** ricifra tutto con una chiave nuova (utile dopo un telefono perso); l'altro telefono si ferma e chiede la chiave nuova.
+- **Niente Google:** i caratteri sono ospitati nell'app, e il browser non contatta più nessun sito esterno tranne la mappa (OpenStreetMap) quando la apri.
+- **Aggiornamento automatico:** alla prima apertura dopo l'aggiornamento ogni telefono porta da solo i dati vecchi al formato nuovo (ci vuole qualche secondo, non serve fare nulla).

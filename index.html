@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Cuoricino">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org; connect-src 'self' https://*.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org; connect-src 'self' https://*.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -34,6 +34,7 @@ img{-webkit-user-drag:none}
 .gico.sm{width:42px;height:42px;font-size:22px;border-radius:13px}
 .note.mn{color:var(--btn);font-weight:700}
 .dc.cs.msn{background:linear-gradient(135deg,#E6D8FB,#FFD3E2);min-height:120px}
+body.cover #app,body.cover #nav{visibility:hidden}
 .qimg{display:block;max-width:100%;max-height:260px;border-radius:14px;margin-top:6px;object-fit:cover}
 .qimg.ld{padding:18px;background:var(--surface2);color:var(--muted);text-align:center;font-size:14px}
 .msg .qimg,.pill .qimg{max-height:200px}
@@ -41,9 +42,7 @@ img{-webkit-user-drag:none}
 </style>
 </head>
 <body>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Tema rosa: rosa = partner A, viola orchidea = partner B. Sfondo sfumato rosa→bianco, barra fluttuante in basso. */
 :root{

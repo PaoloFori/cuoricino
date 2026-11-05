@@ -108,21 +108,47 @@ window.DUCloud=function(cfg){
       const r=await fetch(base+'/functions/v1/'+name,{method:'POST',headers:{apikey:anon,Authorization:'Bearer '+sess.at,'Content-Type':'application/json'},body:JSON.stringify(body||{})});
       if(!r.ok)throw new Error('HTTP '+r.status); return r.json().catch(()=>({}));
     },
-    /* Cifra le foto e i dati già salvati in chiaro. Sicura da rifare: salta ciò che è già cifrato. */
-    async migrate(progress){
+    /* Scorre tutti i documenti della coppia, a pagine. */
+    async scan(fn){
+      let last='';
+      for(;;){
+        const rows=await req('/rest/v1/docs?couple=eq.'+couple.id+'&deleted=eq.false&select=path,data&order=path.asc&limit=30'+(last?'&path=gt.'+encodeURIComponent(last):''));
+        if(!rows.length)break;
+        for(const r of rows){last=r.path; await fn(r)}
+        if(rows.length<30)break;
+      }
+    },
+    /* Cifra (o porta al formato nuovo) tutto ciò che è ancora in chiaro. Sicura da rifare: salta ciò che è già a posto.
+       Le risposte dell'altro le aggiorna il suo telefono, a meno che non si chieda esplicitamente. */
+    async migrate(progress,withAnswers){
       const E=window.DUCrypto; if(!E||!E.has()||!couple)return {done:0};
-      let n=0, last='';
-      for(;;){ /* foto intere: non stanno nella cache, si leggono a pagine */
-        const q='/rest/v1/docs?couple=eq.'+couple.id+'&path=like.'+encodeURIComponent('photofull/*')+'&deleted=eq.false&select=path,data&order=path.asc&limit=20'+(last?'&path=gt.'+encodeURIComponent(last):'');
-        const rows=await req(q); if(!rows.length)break;
-        for(const r of rows){last=r.path; if(await E.needsEnc(r.path,r.data)){await write(r.path,r.data,false);n++} if(progress)progress(n)}
-        if(rows.length<20)break;
-      }
-      for(const path of Object.keys(cache)){ /* tutto il resto che c'è già in memoria (le risposte ognuno le cifra dal proprio telefono) */
-        if(path.indexOf('answers/')===0)continue;
-        if(await E.needsEnc(path,cache[path])){await write(path,cache[path],false);n++; if(progress)progress(n)}
-      }
+      let n=0;
+      await this.scan(async r=>{
+        if(r.path.indexOf('answers/')===0&&!withAnswers)return;
+        if(await E.needsEnc(r.path,r.data)){await write(r.path,await E.reencrypt(r.path,r.data),false);n++; if(progress)progress(n)}
+      });
       return {done:n};
+    },
+    /* Cambio della chiave: tutto viene ricifrato con la nuova. Chi ha già la chiave nuova in uso (beginRotation) lo chiama;
+       l'altro telefono viene fermato dal segnale couple/rotating e poi chiede la chiave nuova. */
+    async rotate(progress){
+      const E=window.DUCrypto; if(!E||!E.has()||!E.rotating()||!couple)throw new Error('cambio non avviato');
+      await write('couple/rotating',{by:(sess&&sess.uid)||'',at:Date.now()},false);
+      await new Promise(r=>setTimeout(r,4500));  /* il tempo che l'altro telefono veda il segnale e si fermi */
+      let total=0;
+      for(let pass=0;pass<5;pass++){
+        let changed=0;
+        await this.scan(async r=>{
+          if(await E.allOpen(r.path,r.data)&&!(await E.needsEnc(r.path,r.data)))return;
+          await write(r.path,await E.reencrypt(r.path,r.data),false); changed++; total++; if(progress)progress(total);
+        });
+        if(!changed)break;
+        await new Promise(r=>setTimeout(r,1500));
+      }
+      await write('couple/keycheck',{v:await E.makeCheck()},false);
+      await write('couple/rotating',null,true);
+      await E.endRotation();
+      return {done:total};
     },
     leave(){couple=null;sess=null;cache={};listeners=[];cursor='';ready=false;clearInterval(timer);timer=0;try{localStorage.removeItem(KEY)}catch(e){}}
   };
