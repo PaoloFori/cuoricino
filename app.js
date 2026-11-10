@@ -552,13 +552,14 @@ function missionHTML(){
     :`<p>${esc(nm(o))} ha una missione segreta su di te. Scoprirai cosa era quando dirà che è compiuta. 👀</p>`;
   return headerHTML()+`<section class="card"><p class="eyebrow">La tua missione segreta</p>${mine}</section>
    <section class="card"><p class="eyebrow">La missione di ${esc(nm(o))} per te</p>${theirs}</section>
-   <p class="note">Le missioni e le loro foto spariscono alla fine della giornata.</p>${backBtn('back','Torna alla home')}`;
+   ${(md.done||od.done)?chatLink('mi'+t,'Missione del giorno'):''}
+   <p class="note">Le missioni, le loro foto e la chat spariscono alla fine della giornata.</p>${backBtn('back','Torna alla home')}`;
 }
 
 /* --- Foto e dati "del giorno": spariscono il giorno dopo ---
    Risposte e foto delle attività del giorno (e le chat collegate) non restano: del giorno rimane solo il segno che l'hai fatto,
    per la serie. Le foto date nei quiz e nel mazzo restano invece nel loro quiz. */
-const DAYKEY=/^(?:dy|x)(\d{4}-\d\d-\d\d)(?:q\d)?$/;
+const DAYKEY=/^(?:dy|x|mi)(\d{4}-\d\d-\d\d)(?:q\d)?$/;
 function purgeDaily(){
   if(S.mode==='boot'||!S.watchOk&&S.mode==='shared')return;
   const t=todayStr(), local=S.mode==='local', mine=sl=>local||sl===me();
@@ -769,7 +770,7 @@ function dailyHTML(){
   const k=S.view.k, it=dailyItem(k,todayStr());
   const title=k==='d'?'Domanda del giorno':k==='w'?'Chi è più probabile?':'Conversazione 18+';
   return headerHTML()+`<section class="card"><div class="qhead"><p class="eyebrow">${title}</p>${k==='x'?'<span class="tag hot" style="margin:0">18+</span>':''}</div>
-   <h2 class="qtext">${esc(gx(it.t))}</h2>${answerBlock(it)}</section>${done(ans('A',it.key))&&done(ans('B',it.key))?chatHTML(it.key,'Parlatene insieme'):''}${backBtn('back','Torna alla home')}`;
+   <h2 class="qtext">${esc(gx(it.t))}</h2>${answerBlock(it)}</section>${done(ans('A',it.key))&&done(ans('B',it.key))?chatLink(it.key,gx(it.t)):''}${backBtn('back','Torna alla home')}`;
 }
 function profHTML(){
   const m=me(), a=S.answers[m]||{}, ns=activeStories(m).length;
@@ -826,7 +827,7 @@ function deckQHTML(){
   const it=dr.it, q=dr.q, both=done(ans('A',it.key))&&done(ans('B',it.key));
   const kind=q.mine?(q.o?'Vostra':'Vostra · risposta libera'):q.who?'Chi dei due?':!q.o?'Risposta libera':q.pref?'Preferisci':'Sinceramente', ctag=(!q.hot&&q.cat)?dcatName(q.cat):'';
   return headerHTML()+`<section class="card"><span class="tag ${q.hot?'hot':''}">${q.hot?'Hot · ':''}${esc(kind)}${ctag?' · '+esc(ctag):''}</span><h3 class="qtext">${esc(gx(it.t))}</h3>${answerBlock(it)}
-   <div class="actions"><button class="btn ${both?'':'ghost'}" data-act="draw">${heartSvg()}${both?'Pesca un\'altra':'Salta'}</button></div></section>${both?chatHTML(it.key,'Parlatene insieme'):''}${backBtn('back','Torna al quiz')}`;
+   <div class="actions"><button class="btn ${both?'':'ghost'}" data-act="draw">${heartSvg()}${both?'Pesca un\'altra':'Salta'}</button></div></section>${both?chatLink(it.key,gx(it.t)):''}${backBtn('back','Torna al quiz')}`;
 }
 function quickHTML(){
   const ns=[5,10,20,30], on=hotOn(), q=S.quick&&S.quick.ids&&S.quick.ids.length;
@@ -846,7 +847,7 @@ function customHTML(){
   const rows=list.map(c=>{
     const it=customItem(c);
     return `<article class="card"><span class="tag ${c.hot?'hot':''}">${c.hot?'Hot · ':''}di ${esc(nm(c.by))}${it.o?'':' · risposta libera'}</span><h3 class="qtext">${esc(c.t)}</h3>${answerBlock(it)}
-      ${c.by===m?`<div class="actions"><button class="btn ghost sm" data-act="delq" data-id="${esc(c.id)}">Elimina la domanda</button></div>`:''}</article>${done(ans('A',it.key))&&done(ans('B',it.key))?chatHTML(it.key,'Parlatene insieme'):''}`;
+      ${c.by===m?`<div class="actions"><button class="btn ghost sm" data-act="delq" data-id="${esc(c.id)}">Elimina la domanda</button></div>`:''}</article>${done(ans('A',it.key))&&done(ans('B',it.key))?chatLink(it.key,gx(it.t)):''}`;
   }).join('');
   return `<div class="sec"><h3>Le vostre domande</h3><button class="btn sm" data-act="addq">+ Aggiungi</button></div>
    ${rows||'<p class="note" style="margin-top:-6px">Scrivete le domande che volete: a scelta multipla oppure a risposta libera.</p>'}`;
@@ -910,6 +911,8 @@ function chatHTML(th,title){
   return `<section class="card chat"><h3 style="font-size:20px">${esc(title||'Discussione')}</h3><div class="msgs">${list}</div>
    <form class="form tform" data-form="chat" data-th="${esc(th)}" novalidate><input maxlength="300" autocomplete="off" placeholder="Scrivi un messaggio"><button class="btn" type="submit">Invia</button><button type="button" class="btn ghost" data-act="chatph" data-th="${esc(th)}" aria-label="Invia una foto">📷</button></form></section>`;
 }
+const chatLink=(th,title)=>{const n=thMsgs(th).length;return `<section class="card"><button class="btn ${n?'':'ghost'}" style="width:100%" data-act="chat" data-th="${esc(th)}" data-title="${esc(title||'')}">💬 Parlatene insieme${n?' · '+n+(n===1?' messaggio':' messaggi'):''}</button></section>`};
+const chatPageHTML=()=>headerHTML()+backBtn('chatback','← Indietro')+chatHTML(S.view.th,S.view.title||'Discussione');
 function chatNotify(old){
   if(!old||!S.watchOk)return;
   const ids=new Set(old.map(c=>c.id)), m=me();
@@ -933,7 +936,7 @@ function resHTML(){
   const pass=S.mode==='local'&&prog(src.items,o)<n?`<button class="btn" data-act="pass">Passa il telefono a ${esc(nm(o))}</button>`:'';
   const status=doneO?'Completato da entrambi.':`${esc(nm('A'))} ${pa}/${n} · ${esc(nm('B'))} ${pb}/${n}`;
   const disc=diff.length?`<section class="card"><p class="eyebrow">Da discutere</p><ul class="dlist">${diff.map(it=>`<li>${esc(gx(it.t))}</li>`).join('')}</ul></section>`:'';
-  return headerHTML()+`<h2 class="h2">${esc(src.title)}</h2><section class="card"><p class="eyebrow">Resoconto per entrambi</p>${sum}<p class="note" style="text-align:center;margin-top:6px">${status}</p><div class="actions" style="justify-content:center">${pass}<button class="btn ghost" data-act="back">Torna ai quiz</button></div></section>${disc}${prog(src.items,m)>0?chatHTML(S.view.src,'Discussione sul quiz'):''}${rows}`;
+  return headerHTML()+`<h2 class="h2">${esc(src.title)}</h2><section class="card"><p class="eyebrow">Resoconto per entrambi</p>${sum}<p class="note" style="text-align:center;margin-top:6px">${status}</p><div class="actions" style="justify-content:center">${pass}<button class="btn ghost" data-act="back">${S.tab==='home'?'Torna alla home':'Torna ai quiz'}</button></div></section>${disc}${prog(src.items,m)>0?chatLink(S.view.src,'Discussione sul quiz'):''}${rows}`;
 }
 function addqHTML(){
   const on=hotOn(), q=S.cq||{t:'',o:'',hot:false};
@@ -1303,6 +1306,10 @@ function html(){
   if(!S.profile)return setupHTML();
   if(S.mode==='shared'&&!S.slot)return chooserHTML();
   if(S.mode==='shared'&&S.slot&&S.canWrite&&!((S.profile.names||{})[S.slot]))return nameHTML();
+  const vt=S.view&&S.view.t;
+  if(vt==='chat')return chatPageHTML();
+  if(vt==='run')return runHTML();
+  if(vt==='res')return resHTML();
   if(S.tab==='quiz')return quizHTML();
   if(S.tab==='ricordi')return ricordiHTML();
   if(S.tab==='giochi')return headerHTML()+G.render();
@@ -1338,7 +1345,7 @@ document.addEventListener('change',e=>{
 function openRun(src){
   const items=srcOf(src).items; if(!items.length)return;
   const m=me(), i=items.findIndex(it=>!done(ans(m,it.key)));
-  S.view=i<0?{t:'res',src:src}:{t:'run',src:src,i:i}; S.tab='quiz'; go();
+  S.view=i<0?{t:'res',src:src}:{t:'run',src:src,i:i}; go();
 }
 function advance(){
   const v=S.view, items=srcOf(v.src).items;
@@ -1433,6 +1440,8 @@ document.addEventListener('click',e=>{
     if(saveAns(it.key,i))advance();break}
   case 'prev': S.view.i=Math.max(0,S.view.i-1);go();break;
   case 'back': S.view=null;S.photoView=null;go();break;
+  case 'chat': S.view={t:'chat',th:t.dataset.th,title:t.dataset.title,ret:S.view};go();window.scrollTo(0,document.body.scrollHeight);break;
+  case 'chatback': S.view=(S.view&&S.view.ret)||null;go();break;
   case 'addq': S.cq={t:'',o:'',hot:false,cat:'know'};S.view={t:'addq'};S.tab='quiz';go();break;
   case 'delq': delRec('custom',t.dataset.id).then(()=>render(true)).catch(()=>toast('Non riesco a eliminarla.'));break;
   case 'w-create':
@@ -1609,7 +1618,7 @@ document.addEventListener('submit',e=>{
     if(!S.canWrite)return toast(RO);
     const th=f.dataset.th; blur(); if(inp)inp.value='';
     putRec('chat',{id:newId(),th:th,by:me(),at:Date.now(),t:v}).catch(()=>toast('Non riesco a inviare il messaggio.'));
-    render(true); return;
+    render(true); setTimeout(()=>window.scrollTo(0,document.body.scrollHeight),60); return;
   }
   if(kind==='cap'){
     const cap=g('f-cap').slice(0,80), p=S.photos.find(x=>x.id===(S.photoView&&S.photoView.id)); if(!p)return;

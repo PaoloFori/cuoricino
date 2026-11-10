@@ -44,7 +44,7 @@ try:
     B.wait('form[data-form=tans] input'); B.fill('form[data-form=tans] input','risposta di Luca'); B.submit('form[data-form=tans]'); time.sleep(3)
     t=B.text()
     check('SEGRETO-ANNA-TESTO-123' in t,'B (con la chiave giusta) legge la risposta di Anna decifrata')
-    B.fill('form[data-form=chat] input','MESSAGGIO-CHAT-B'); B.submit('form[data-form=chat]'); time.sleep(3)
+    B.click('[data-act=chat]'); B.wait('form[data-form=chat] input'); B.fill('form[data-form=chat] input','MESSAGGIO-CHAT-B'); B.submit('form[data-form=chat]'); time.sleep(3); B.click('[data-act=chatback]')
     # --- A: nuova domanda, risposta con foto
     A.click('[data-act=draw]'); A.wait('[data-act=qphoto]'); A.click('[data-act=qphoto]'); A.file(APP+'/icon-512.png'); time.sleep(3)
     # --- B vede la foto di A
